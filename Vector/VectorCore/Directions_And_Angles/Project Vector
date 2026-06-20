@@ -1,0 +1,217 @@
+
+/*
+====================================================================
+Project Vector
+====================================================================
+
+        PROJECT NEDİR?
+        ---------------
+            Bir vektörü başka bir vektörün üzerine " iz düşürmek"
+            A vektörünün, B doğrultusundaki bileşenini bulmak
+
+
+        --------------------------------------------------------------------
+        MATEMATİKSEL FORMÜL
+        --------------------------------------------------------------------
+
+            proj_B(A) = (Dot(A, B) / |B|²) * B
+            Eğer B normalize ise:
+            proj_B(A) = Dot(A, B) * B
+
+        --------------------------------------------------------------------
+        MANTIK
+        --------------------------------------------------------------------
+
+            Dot -> A'nın B yönündeki miktarını verir (skaler)
+            Projection -> Bu miktarı B yönünde vektör olarak çıkarır
+            Yani:
+                Dot -> "Ne kadar?" (Miktar)
+                Projection -> "Hangi yönde?" (vektör)
+
+        --------------------------------------------------------------------
+        NE ZAMAN KULLANILIR?
+        --------------------------------------------------------------------
+
+            -> Karakterin ileri yöndeki hızını bulmak
+            -> Eğime göre hareket bileşeni ayırmak
+            -> Kuvvetleri eksenlere ayırmak
+            -> Sadece bir doğrultudaki etkileri hesaplamak
+
+        --------------------------------------------------------------------
+        PROJECT vs PROJECTONPLANE
+        --------------------------------------------------------------------
+
+            Project        -> eksen üzerindeki bileşen
+            ProjectOnPlane -> eksen DIŞINDA kalan bileşen
+
+
+        ====================================================================
+        PERFORMANS
+        --------------------------------------------------------------------
+
+            İçeride:
+                    - Dot
+                    - 1 bölme
+                    - Vektör çarpımı
+                    Orta seviye maliyet
+
+=================================================================================        
+*/
+
+
+
+public class Project_Vector : MonoBehaviour
+{
+
+
+    public Transform _objeA; // Kaynak vektör
+    public Transform _objeB; // Referans yön
+
+    void Update()
+    {
+        if (_objeA == null || _objeB == null) return;
+
+        //   BKendiZEksenineGoreProjeksiyon();
+        AdanByeOlanDugrultuyaGoreProjeksiyon();
+
+    }
+
+
+    /*
+    
+    ========================================================================
+    A'nın B’nin kendi Z eksenine göre hız bileşeni (Vector3.Project)
+    ========================================================================
+
+        Bu fonksiyon, bir nesnenin (A) başka bir nesnenin (B) kendi Z ekseni doğrultusundaki hız ve hareket bileşenini hesaplamak için kullanılır
+
+        - A vektörü -> Nesnenin mevcut hareketi (Örn: Player'ın hızı ve yönü)
+        - B vektörü -> Referans nesnenin kendi Z ekseni, normalize edilmiş
+
+
+        İşleyiş:
+        ----------
+            1) B = _objeB.forward; 
+                        -> B'nin kendi Z ekseni yönü
+            
+            2) projected = Vector3.Projected(A, B.normalized);
+                        -> A'non sadece B'nin Z ekseni doğrultusundaki bileşeni
+
+            3) forwardAmount = projected.magnitude;
+                        -> A'nın B'nin Z eksenindeki hız büyüklüğü
+
+
+        Kullanım:
+        ----------
+            - A'nın B'nin Z ekseni doğrultusundaki hareket miktarını ölçmek
+            - B'nin Z eksenine göre hareket bileşenlerini ayırmak
+            - Fizik veya AI hesaplamalarında, B'ye göre yönlendirme yapmak
+
+
+        Not:
+        -------
+            - A normalize değilse, magnitude gerçek hız verir
+            - B mutlaka normalize edilmeli, aksi halde projeksiyon hatalı olur
+            - Debug.DrawRay ile görselleştirme yapılabilir (A'nın orjinal yönü ve B Z eksenindeki bileşeni)
+            
+    */
+
+    void BKendiZEksenineGoreProjeksiyon()
+    {
+
+
+
+        // A vektörü → Player'ın hareketi
+        Vector3 A = _objeA.forward * 5f;
+
+        // B doğrultusu → Referans nesnenin Z ekseni
+        Vector3 B = _objeB.forward;
+
+        if (B.sqrMagnitude < 0.001f) return;
+
+
+
+        // Projeksiyon → A'nın B Z ekseni doğrultusundaki bileşeni
+        Vector3 projected = Vector3.Project(A, B.normalized);
+        Debug.Log("Projected (Unity): " + projected);
+
+
+        // Fiziksel anlam → B Z eksenindeki hız büyüklüğü
+        float forwardAmount = projected.magnitude;
+        Debug.Log("B yönündeki miktar: " + forwardAmount);
+
+
+        //  Görselleştirme (Test için)
+        Debug.DrawRay(_objeA.position, A, Color.blue); // Orijinal
+        Debug.DrawRay(_objeA.position, projected * 2f, Color.green); // Projeksiyon
+    }
+
+
+
+
+
+
+
+    /*
+        ====================================================================
+        A'nın B'ye olan hız bileşeni (Vector3.Project)
+        ====================================================================
+
+            Bu fonksiyon, bir nesnenin (A) başka bir nesneye (B) doğru olan hızını veya  hareket bileşenini hesaplamak için kullanılır.
+
+            - A vekötrü -> Nesnenin mevcut harketi vektörü (Örn. Player'ın hızı ve yönü)
+            - B doğrultusu -> Hedef nesneye (B) olan doğrultu, normalize edilmiş
+
+            İşleyiş:
+            ----------
+                1) directionToB = (_objeB.position - _objeA.position).normalized;
+                            -> A'dan B'ye olan yön vektörü
+                
+                2) projected = Vector3.Project(A, directionToB);
+                            -> A'nın sadece B doğrultusundaki bileşeni (hız vektörü).
+
+                3) forwardAmount = projeted.magnitude;
+                            -> A'nın B'ye doğru olan hız büyüklüğü.
+
+
+
+            Kullanım:
+            ----------
+                - A'nın B'ye doğru ne kadar hızlı hareket ettiğini ölçmek
+                - A'yı B doğrultusunda hızlandırmak ve yavaşlatmak
+                - Fizik veya AI hesaplamalarında hedefe doğru yönlendirme.
+
+
+        
+            Not:
+            --------
+                - A normalize değilse, magnitude hızı gerçek olarak veirr
+                - directionToB normalize edlimelidir, yoksa projeksiyon hatalı olur
+                - Debug.DrawRay ile görselleştirme yapılabilir (A'nın orjinal yönü ve B doğrultusundaki bileşeni)
+        */
+    void AdanByeOlanDugrultuyaGoreProjeksiyon()
+    {
+        if (true)
+        {
+            // A vektörü (örnek olarak hız gibi düşün)
+            // _objeA.forward normalize edilmiş bir vekördür (uzunluğu 1)
+            // AMA *5 ile büyütüyoruz, yani artık normalize değil, uzunluğu 5
+            Vector3 A = _objeA.forward * 5f; // PLayer'ın hareketi
+            Vector3 diff = _objeB.position - _objeA.position;
+
+            if (diff.sqrMagnitude < 0.001f) return;
+
+            Vector3 directionToB = diff.normalized;
+
+            // A  -> normalize değil 
+            // directionToB -> normalize
+            Vector3 projected = Vector3.Project(A, directionToB);
+            float forwardAmount = projected.magnitude;
+            Debug.Log("A’dan B’ye doğrultuda: " + forwardAmount);
+
+            Debug.DrawRay(_objeA.position, A, Color.blue);
+            Debug.DrawRay(_objeA.position, projected * 2f, Color.green);
+        }
+    }
+}
+
