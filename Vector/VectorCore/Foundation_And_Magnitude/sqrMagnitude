@@ -1,0 +1,68 @@
+/*
+    .sqrMagnitude 
+    ----------------------------------
+        Amaç: Bir vektörün kare büyüklüğünü (squared lenght) hesaplamak.
+              .sqrMagnitude, magnitude gibi çalışır fakat karekök almaz.
+              Bu yüzden performans açısından daha hızlıdır
+
+        
+        Ne zaman kullanılır?
+                        - Sadece karşılaştırma yaparken (mesafe küçük mü büyük mü?)
+                        - Gerçek uzunluğa ihtiyacın yoksa
+                        - Performans kritik durumlarda (örneğin yüzlerce enemy kontrolü)
+
+        Önemli:
+          magnitude = sqrt(x² + y² + z²)
+          sqrMagnitude = x² + y² + z²
+
+*/
+public class SqrMagnitude_Vector : MonoBehaviour
+{   
+    // Örnek Vektörler
+    public Vector3 velocity = new Vector3(3,4,0);
+    public Vector3 pointA = new Vector3(0,0,0);
+    public Vector3 pointB = new Vector3(5,0,0);
+   
+    void Start()
+    {
+
+        // 1. magnitude ve sqrMagnitude karşılaştırması
+        float mag = velocity.magnitude;
+        float sqrMag = velocity.sqrMagnitude;
+
+        Debug.Log("Magnitude: "+ mag);
+        Debug.Log("SqrMagnitude: "+ sqrMag);
+
+
+
+        // 2. İki nokta arasındaki fark vektörü
+        Vector3 diff = pointB - pointA;
+
+        float distance = diff.magnitude;
+        float distanceSqr = diff.sqrMagnitude;
+
+        Debug.Log("Gerçek Mesafe (magnitude): "+ distance);
+        Debug.Log("Mesafenin Karesi (sqrMagnitude): "+ distanceSqr);
+
+
+
+        // 3. Performanslı mesafe kontrolü örneği
+        
+        float maxDistance = 10f;
+
+        if (diff.sqrMagnitude < maxDistance * maxDistance)
+        {
+            Debug.Log("Hedef menzil içinde (sqrMagnitude ile kontrol edili)");
+        }
+        else
+        {
+            Debug.Log("Hedef menzil dışında");
+        }
+
+
+
+
+    }
+
+   
+}
