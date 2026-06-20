@@ -1,0 +1,75 @@
+
+/*
+    Vector3.Distance()
+    --------------------
+        Amaç: İki nokta arasındaki mesafeyi hesaplamak
+
+        Vector3.Distance(a, b) aslında şunu yapar == (a - b).magnitude
+
+            Yani arka planda:
+                            -> Fark vektörü hesaplanır
+                            -> magnitude alınır
+
+        
+        Ne zaman kullanılır?
+                            - İki obje arası uzaklık kontrolü
+                            - Enemy menzil kontrolü
+                            - Trigger mesafe kontrolü
+                            - Hedefe ulaştı mı kontrolü
+
+        
+        Performans Notu: Eğer sadece karşılaştırma yapacaksan: sqrMagnitude kullan
+                        
+*/
+
+public class Distance_Vector : MonoBehaviour
+{
+    // Ornek Vektörler
+
+    public Vector3 pointA = new Vector3(0, 0, 0);
+    public Vector3 pointB = new Vector3(3, 4, 0);
+
+
+    void Start()
+    {
+
+        // 1. Vector3.Distance ile hesaplama
+        float distanceDirect = Vector3.Distance(pointA, pointB);
+        Debug.Log("Vector3.Distance sonucu: " + distanceDirect);
+
+
+
+        // 2. Manuel hesaplama (fark + magnitude)
+        Vector3 diff = pointB - pointA;
+        float distanceManuel = diff.magnitude;
+        Debug.Log("Manuel hesaplama sonucu: " + distanceManuel);
+
+
+
+
+        // 3. Aynı sonucu veridiğini kontrol
+        // Mathf.Approximately -> iki float değerin neredeyse eşit olup olmadığını kontrol eder
+        if (Mathf.Approximately(distanceDirect, distanceManuel))
+        {
+            Debug.Log("Her iki yöntem aynı sonucu verdi.");
+        }
+
+
+
+        // 4. Basit menzil kontrolü
+        float attackRange = 5f;
+        float attackRangeSqr = attackRange * attackRange;
+
+        Vector3 difference = pointB - pointA;
+
+        if (difference.sqrMagnitude <= attackRangeSqr)
+        {
+            Debug.Log("Hedef menzil içinde");
+        }
+        else
+        {
+            Debug.Log("Hedef menzil dışında");
+        }
+
+    }
+}
