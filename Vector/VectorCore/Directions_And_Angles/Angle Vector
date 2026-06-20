@@ -1,0 +1,152 @@
+
+/*
+====================================================================
+Angle Vector
+====================================================================
+
+    ANGLE NEDİR?
+    -------------
+        İki vektör arasındaki açı, yönleri karşılaştırmak için temel kavramdır
+
+        Formül:
+            float angle = Mathf.Acos(Dot(a.normalized, b.normalized)) * Mathf.Rad2Deg;
+
+        Dot ile ilişki: Dot(a, b)  = |a||b|cosθ
+                                                -> normalize edilmişse: Dot(a, b) = cosθ
+
+        Oyunlarda kullanım:
+                        -> Hedefin açısı (FOV kontrolü)
+                        -> Rotasyon miktarı hesaplama
+                        -> Animasyon blend / yöb kontrolü
+                        -> Kameranın bakış açısını ölçme
+
+    ====================================================================
+    KOD AÇIKLAMALARI
+    --------------------------------------------------------------------
+
+        1) Vector3.Angle(a,b):
+                            - Unity'de hazır fonksiyon
+                            - 0° - 180° arası değer döner
+                            - İki vektör arasındaki açıyı verir (yön farkı)
+
+        
+        2) Dot ile manuel hesaplama:
+                            - Dot + Acos ile açı hesaplanabilir
+                            - Normalize edilmiş vektörlerde Dot = cosθ
+                            - angle = Mathf.Acos(dot) * Mathf.Rad2Deg;
+
+
+        3) SignedAngle ile farkı: 
+                            - SignedAngle, hangi yönde döneceğini de söyler
+                            - Angle sadece büyüklüğü verir
+
+
+   
+        ====================================================================
+        PERFORMANS VE SEÇİM REHBERİ
+        --------------------------------------------------------------------
+            Angle / Acos YAVAŞTIR. İçinde ağır trigonometrik hesaplamalar barındırır.
+            Vector3.SignedAngle EN YAVAŞTIR (Acos + Cross işlemlerini birleştirir).     
+
+            KURAL: Eğer sadece 'Miktar' (açı) arıyorsan Angle, 
+                   Eğer sadece 'Yön' arıyorsan Cross, 
+                   Hem miktar hem yön gerekiyorsa SignedAngle.      
+
+            - Sadece UI'da derece göstermek veya hassas farklar için bunları kullan.
+            - Mantıksal kararlar (Görüyor muyum?) için DOT tercih et.       
+
+            Örnek (FOV Kontrolü): 
+                // 90 derecelik FOV için cos(45) sakla (Start'ta Cachele)
+                float cosHalfFov = Mathf.Cos(FOV * 0.5f * Mathf.Deg2Rad);
+
+                // Dot hesapla ve karşılaştır (Görüyor muyum?)
+                float dot = Vector3.Dot(forward, direction);
+                if(dot > cosHalfFov) // Görüyorum! (HIZLI)      
+
+            ------------------------------------------------------------
+            HANGİSİNİ SEÇMELİYİM? (Hız Sıralaması)
+            ------------------------------------------------------------
+            1. "Görüyor muyum?" (FOV) -> DOT (En Hızlı / Şampiyon)
+               if (dot > cosHalfFov)        
+
+            2. "Sağda mı Solda mı?"   -> CROSS (Hızlı / Yön odaklı)
+               // Sıralama: (Baktığım_Yön, Hedefin_Yönü)
+               float side = Vector3.Dot(Vector3.Cross(forward, direction), transform.up);
+               if (side > 0) // SOL (+)  | else if (side < 0) // SAĞ (-)        
+
+            3. "Kaç derece fark var?" -> ANGLE (Yavaş / Sadece miktar)
+               angle = 30° (Yönü bilmez)        
+
+            4. "Hangi yöne kaç derece?"-> SIGNEDANGLE (En Yavaş / Hepsi bir arada)
+               angle = -30° (Hem miktar hem yön)
+            ------------------------------------------------------------
+
+*/
+
+
+
+public class Angle_Vector : MonoBehaviour
+{
+
+    public Transform _objA;
+    public Transform _objeB;
+    
+
+    void Update()
+    {
+        if (_objA == null || _objeB == null) return;
+
+
+        // 1. Yön vektörleri
+        Vector3 forward = _objA.forward;
+        Vector3 diffToB = _objeB.position - _objA.position;
+
+        if (diffToB.sqrMagnitude < 0.001f) return;
+        Vector3 direction = diffToB.normalized;
+
+
+
+        // 2. Unity hazır fonksiyon
+        float angleUnity = Vector3.Angle(forward, direction);
+        Debug.Log("Vector3.Angle sonucu: " + angleUnity + "°");
+
+
+
+        // 3. Vector3.Angle'yi manuel hesaplama [iç yapısı] (dot + acos)
+        float dot = Vector3.Dot(forward, direction);
+        Debug.Log("Dot değeri: " + dot); // cosθ
+    
+        float angleManual = Mathf.Acos(Mathf.Clamp(dot, -1f, 1f)) * Mathf.Rad2Deg;
+        Debug.Log("Manuel hesaplama (dot + acos) sonucu: " + angleManual + "°");
+
+
+
+
+        // 4. Cross ile yön konrolü (hangi yöne dönlecek)
+        Vector3 cross = Vector3.Cross(forward, direction);
+        Debug.Log("Cross Magnitude (sinθ): " + cross.magnitude);
+
+        float side = Vector3.Dot(cross, _objA.up);
+
+        if (side > 0)
+            Debug.Log("Hedef SOLA dönülmeli.");
+        else if (side < 0)
+            Debug.Log("Hedef SAĞA dönülmeli.");
+        else
+            Debug.Log("Hedef tam ÖN/ARKA doğrultuda");
+
+
+
+
+        // 5. FOV KONTROLÜ ÖRNEĞİ (Dot ile yapmak daha iyi ama örnek olsun diye yaptım)
+        float fovLimit = 45f; // ön görüş açsı
+        if (angleUnity < fovLimit)
+        {
+            Debug.Log("Hedef görüş açısı içinde.");
+        }
+        else
+        {
+            Debug.Log("Hedef görüş açısı dışında.");
+        }
+    }
+}
