@@ -1,0 +1,579 @@
+
+
+using UnityEngine;
+
+
+public class MathfIslemleri2 : MonoBehaviour
+{
+    #region Temel Aritmetik fonksiyonlar
+
+
+    #region Abs -> Mutlak Değer
+
+    // Abs 
+    // Mutlak değer. Sayının işaretini yok eder. TEK EKSENDE İŞLEM YAPAR
+    // Mathf.Abs'in en popüler kullanım alanı, karakterin hedefe olan mesafesini (yönüden bağımsız olarak) öğrenmek
+
+    // Senaryo: " Kritik yakınlık kontrolü "
+    public Transform madenPos; // madenin konumu
+    public float kritikMesafe = 2.0f;
+    void AbsKullanimi()
+    {
+        // karekterin x konumu ile madennin x konumu arasındaki FARK
+        float fark = madenPos.position.x - transform.position.x;
+
+        // Mutlak değer alarak yönü (veya işareti) yok sayıp sadece birim/miktar (uzaklık) bilgisini alıyorsun.
+        float mesafe = Mathf.Abs(fark);
+
+        // Artık değer madenin hangi tarafında olursa olsun
+        // mesafe her zaman pozitif ve doğru döner
+        if (mesafe < kritikMesafe)
+        {
+            Debug.Log("Maden menzilde! Kazma butonunu göster");
+        }
+
+        /*
+        Neden Abs Hayat Kurtarır?
+            Eğer Abs kullanmasaydın:
+
+                * Karakter madenin solunda olsaydı (fark -5 çıkardı): -5 <= 2 olduğu için kodun madene henüz çok uzaktayken bile "kazmaya başla" derdi.
+
+                * Karakter madenin sağında olsaydı (fark +5 çıkardı): 5 <= 2 olmadığı için kodun hiçbir şey yapmazdı.
+
+                * Mathf.Abs kullanarak bu yön karmaşasını tek bir satırda tertemiz bir matematiksel uzaklığa çevirmiş olduk.
+        */
+
+    }
+    #endregion
+
+    #region Sqrt -> Karekök
+    void SqrtKullanimi()
+    {
+        // Karekök alır 
+        // Mathf.Sqrt(16) sonucu 4'tür
+        Debug.Log(Mathf.Sqrt(16));
+    }
+    #endregion
+
+    #region Pow -> Kuvvet Alma [Katlanarak Büyüme]
+    /*
+    [Katlanarak Büyüme]
+       
+        Bu, oyunun zorluk motorudur. Oyuncunun her seviyedew daha fazla zorlanmasını veya düşmanların güçlenmesinde kullanılır.
+            
+            Kullanım: 
+                    - Ekonomi enflasyonu
+                    - Boss canı
+                    - Artan seviye zorluğu
+            
+            Felsefesi:
+                    - Başlangıçta kolay, sona doğru durdurulamaz
+            
+        İpucu:
+        --------
+            "Agresif" büyüme. 1.1f gibi bir taban kullanırsan kontrol edilebilir, ancak Clamp   kesinlikle şarttır.
+
+           
+            
+                        
+    
+    */
+    void PowKullanimi()
+    {
+        // Bir sayının kuvvetini alır
+        // Pow(taban, üs)
+        // Örn: Mathf.Pow(2, 3) = 2^3 = 8
+
+        // Kare Al
+        Debug.Log(Mathf.Pow(2, 2)); // 4
+
+        Debug.Log(Mathf.Pow(2, 3)); // 8
+
+        // Karekök al
+        Debug.Log(Mathf.Pow(16, 0.5f)); // == Sqrt
+
+        // Küpkök al
+        Debug.Log(Mathf.Pow(8, 1f / 3f));
+
+        /*  // Oyuun Geliştirmede Pow Nerede Kullanılır?
+
+                - İlerleme Eğrisi:
+                         Madenci kazma hızını seviye arttıa artıyorsa, basit bir toplama ( level + 1) yerine üssel bir artılş kullanabiliriz:
+
+                        kazmaHizi = baslangicHizi * MathfPow(1.1f, level);
+                        (Bu formül, seviye arttıkça hızın çık daha "tatmin edici" iekilde aetmasını sağlar)
+
+
+                Fiziksel Etkiler:
+                         Bir patlama olduğunda patlamanın merkezinden uzaklaştıkça hasarın 1/d^2 (uzaklığın karesiyle ters orantılı) azalmasını sağlamak için.
+
+                    Patlama Hasarı Formülü:
+                                    -> Bir patlamanın tam merkezinde hasar maksimumdur. Merkezden uzaklaştıkça hasar, mesafenin karesi ile ters orantılı olarak 
+                                    hızla düşer.
+
+                                      void Update()
+                                         {
+                                             if (Input.GetKeyDown(KeyCode.Space))
+                                             { // patlama yap
+                                                 PatalamHasariHesapla(bomp.position, transform.position);
+                                             }
+                                         }
+         */
+
+    }
+
+    [Space]
+    [Header("Pow Değerleri")]
+    public float makismumHasar = 100f; // Patlama merkezindeki hasar
+    public float patlamaYaricapi = 10f; // Etki alanı
+    void PatalamHasariHesapla(Vector3 patalamaMerkezi, Vector3 hedefPozisyon)
+    {
+        float mesafe = Vector3.Distance(patalamaMerkezi, hedefPozisyon);
+
+
+        // Eğer patlama alanı içindesye hasar yer
+        if (mesafe < patlamaYaricapi)
+        {
+            // 1/d^2 formülünü uygulayalım
+            // Hasar = MaxHasar * (1 / (1 + mesafe^2))
+            // '1 + mesafe' kullanmamızın sebebi, 0 olduğunda 1/0 hatasını engellemek
+
+            float hasar = makismumHasar * (1f / (1f + Mathf.Pow(mesafe, 2)));
+
+            Debug.Log("Verilen hasar");
+        }
+
+    }
+
+    private void KupKokTemel()
+    {
+        float hacim = 64f;
+        float kenarUzunlugu = Mathf.Pow(hacim, 1.0f / 3.0f);
+        Debug.Log("Bir küpün hacmi " + hacim + " ise, bir kenarı: " + kenarUzunlugu);
+    }
+
+    // Oyun İçinde Ölçeklendirme (Scaling)
+    // Diyelim ki bir nesnenin hacmini iki katına çıkarmak istiyorsunuz ancak nesnenin görsel olarak "orantılı" büyümesini (tüm eksenlerde eşit ölçeklenmesini) istiyorsunuz
+    private void BuyutNesneKupKok()
+    {
+        float hacimCarpani = 16f; // hacimi 8 katına çıkaracağız
+
+        // Hacimdeki değişim
+        float olcekOrani = Mathf.Pow(hacimCarpani, 1.0f / 3.0f);
+        transform.localScale *= olcekOrani;
+
+    }
+
+
+
+    #endregion
+
+
+
+    #endregion
+
+
+    /* Oyunun Denge Motoru
+            Özetle; Oyun Tasarımcısı Mantığı:
+
+                    -> Eğer bir şeyi yavaşlatmak istiyorsan: Log kullan.
+
+                    -> Eğer bir şeyi dengeli ama sürekli artırmak istiyorsan: Pow kullan (Tabanı 1.0 ile 1.5 arası tut, gerisi kaos olur).
+
+                    -> Eğer "bu sayı nasıl bu kadar büyüdü?" diye şaşırmak istiyorsan: Exp kullan (ama Clamp atmayı sakın unutma!).
+
+
+    | Özellik            | `Mathf.Log(değer, taban)`                             | `Mathf.Pow(taban, level)`                               | `Mathf.Exp(level)`                            |
+    | ------------------ | ----------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
+    | **Kontrol**        | Çok yüksek (taban ve girdi ayarlanabilir)             | Çok yüksek (tabanı sen belirlersin)                     | Düşük (sabit **e ≈ 2.718**)                   |
+    | **Büyüme Hızı**    | Azalan (frenleyici davranır)                          | Ayarlanabilir (dengeli büyüme)                          | Sabit ve çok hızlı                            |
+    | **Kullanım Alanı** | Ödüller, şans sistemleri, oyun dengesi, sınırlandırma | Ekonomi sistemleri, can/hasar artışı, level progression | Fizik hesapları, patlama eğrileri, simülasyon |
+    | **Temel Hissiyat** | “İlerledikçe zorlaşan ama kontrol edilen”             | “İlerledikçe güçlenen ve belirginleşen”                 | “Kontrolsüz ve çok hızlı yükselen”            |
+
+
+    */
+
+
+    #region Logaritmik ve Üstel Fonksiyonlar
+
+    #region Exp(f) -> [hızlanan] [Patlayıcı Artış]
+
+    /*
+    [Patlayıcı Artış]
+        En "acımasız" büyüme. Eğer Clamp kullanmazsan, birkaç seviye sonra oyunundaki tüm sayılar Infinity olur ve her şey birbirine girer.
+
+            Bu, Pow fonksiyonunun özel bir halidir. Pow bazen çok kontrolsüz gelebilir ama Exp daha matematiksel ve organik bir hızlanma sağlar
+                
+                    Kullanım:
+                            -> Çok hızlı büyümesi gereken, oyunun sonunda bir anda devasa hale helen olaylar (bir şehrin nüfusu, bir virüsün yayılması vb.)
+
+                    Mathf.Exp kullanırken genellikle x değerini küçültmek veya bir katsayı ile çarpmak gerekir. İşte güvenli kullanım örneği:
+
+                        Örnek:  
+                            // 'playerLevel * 0.1f' yaparak artış hızını "yumuşatıyoruz"
+                            // 0.1 gibi küçük bir çarpan, Exp'in kontolsüz patlamasını engeller.
+                            float rawValue = Mathf.Exp(playerLevel * 0.1f);
+
+                            // Yine de bir tavan değer (Limit koyuyoruz)
+                            float rawValueLimited = Mathf.Clamp(rawValue, 1f, 1000f);
+
+    */
+    /*  Mathf.Exp(f): e sayısının (2.718...) belitilen kuvetini alır.
+                 Yumuşak geçişli animasyonlarda çok işine yarar 
+                 
+        Neden Kullanılır?
+            Doğal Büyüme: Doğadaki birçok büyüme süreci (nüfus artışı, bakteri çoğalması, bileşik faiz) üstel fonksiyonlarla ifade edilir.
+            
+            Zaman Ayarı: Mathf.Exp(t) kullandığınızda geçişler başlangıçta yavaş, sonrasında hızlanan (exponential) bir ivme kazanır.
+            
+            Sönümlenme (Damping): Eğer Mathf.Exp(-time) şeklinde negatif bir değer verirseniz, değerin hızla sıfıra yaklaşan bir sönümlenme efekti verdiğini görürsünüz. Bu, fiziksel nesnelerin durma anındaki yumuşaklığı için birebirdir.
+
+            Işık Efektleri: Bir lambanın yanarken parlaklığını Mathf.Exp ile artırırsan "daha gerçekçi" bir yanma efekti alırsın.
+
+            Kamera Sallanması: Eğer bir patlamadan sonra kameranın sönümlenmesini istiyorsan, Mathf.Exp(-Time.time) gibi negatif bir değer kullanarak sarsıntının "sönerek" durmasını sağlayabilirsin.  
+
+                 */
+
+    // Örnek : Yumuşak İvmelenme (Smooth Acceleration)
+    //      -> Bir nesnenin zamanla hızının veya büyüklüğünün "doğal" bir şekilde artmasını istiyram Mathf.Exp harika bir tercih
+    [Space]
+    [Header("Exp Değerleri")]
+    public float maksimumBoyut = 10f;
+    public float hiz = 0.5f;
+    void ExpKullanim()
+    {
+        if (transform.localScale.x < maksimumBoyut)
+        {
+            // Zaman ilerledikçe nesneyi daha hızlı büyütür
+            // Time.time 0'dan başlar, e'0 = 1'dir
+            float boyut = Mathf.Exp(Time.time * hiz);
+
+
+            // Mathf.Min ile hedefBoyut ile maksimumBoyut arasındaki küçüküğü seç
+            // Eğer hedefBoyut 10'u geçerse, sonuç her zaman 10 kalacak.
+            float finalBoyut = Mathf.Min(boyut, maksimumBoyut);
+            transform.localScale = new Vector3(finalBoyut, finalBoyut, finalBoyut);
+
+
+        }
+        else
+        {
+            // Büyüme durdu, burada başka bir şey yapabilirsin
+            Debug.Log("Mksimum boyuta ulaşıldı");
+        }
+
+    }
+
+    #endregion
+
+    #region Log(f,base) -> [yavaşlayan] [Frenleme / Dengeleme]
+
+    /* [yavaşlayan] [Frenleme / Dengeleme]
+
+            Bu, oyunun doyum noktasıdır. Oyuncunun çok hızlı güçlenmesini engeller ve oyunun sonlarında bile bir zorluk kalmasını sağlar.
+
+                        Kullanım:
+                                -> Günlük ödüller
+                                -> Yavaşlayan hız artışı
+                                -> Nadirlik düşürme şansları
+                                -> Örnek çok fazla
+
+                        Felsefesi:
+                                -> Hızlı başla, ama sonsuza kadar büyüme
+            Clamp Kullan:
+                En "kibar" olanıdır. Yavaşça tırmanır. Clamp kullanmazsan bile oyunun bozulma ihtimali düşüktür (yine de kullanmak iyidir).
+    */
+
+
+    /* Logaritma Temel Tanımı
+        -----------------------
+            Logaritma, " Bir sayıyı elde etmek için taban sayısını kaçıncı kuvvete  yükseltmeliyim? " sorusunun cevabıdır
+
+            Örnek:
+                Mathf.Log(8,2) sonucu 3'tür. Çünkü 2^3 = 8 eder
+                Mathf.Log(100,10) sonucu 2'dir. Çünkü 10^2 = 100 eder.
+
+
+
+        Taban Seçimi örnek ile
+        ------------------------
+        Taban 2 (Hızlı Artış): 
+                        ->  Seviye atlamak için gereken XP her seferinde iki katına çıkar. Oyuncu hızlı ilerler.
+
+        Taban 10 (Yavaş Artış): 
+                        -> Bir sonraki aşamaya geçmek için 10 kat daha fazla çaba gerekir.
+
+
+
+        Küçük Bir İpucu (Taban Farkı Burada Önemli)
+        -------------------------------------------
+                Mathf.Log10 kullanırsan: 
+                            -> Kazanç her 10 katta bir belirgin artar (10, 100, 1000).
+
+                Mathf.Log (Taban 2) kullanırsan: 
+                            -> Kazanç her 2 katta bir belirgin artar (2, 4, 8, 16).
+
+
+                Eğer oyunun hızlı aksiyonluysa ve ödüllerin daha sık artmasını istiyorsan Taban2 (Mathf.Log(level,2) kullanmak oyuncuyu daha çok tatmin edebilir)
+
+        Oyunda Kullanım Yerleri
+        ----------------------
+            Logaritma, özellikle "çok büyük değerleri daha yönetilebilir küçük değerlere indirmek" için kullanılır
+
+                        - Ses Seviyesi(Decibel) Kontrolü
+                        - Seviye(level) ve Tecrübe Puanı(XP) hesaplama
+                        - Dinamik Kamera Uzaklaşması (Zoom Out)
+                        - Yavaşlayan Büyüme (Locaritmik Scale)
+
+                        - Oyun içi ekonomi dengesi (CalculateReward)
+
+                                
+        
+
+
+        Özetle:
+              -> Exp (e^x): Patlayıcı, ivmelenen büyüme. (Merminin hızlanması, bir virüsün yayılması)
+
+              -> Log (log x): Doygunluğa ulaşan, yavaşlayan artış. (Zenginleştikçe para kazanmanın zorlaşması, seviye atlama zorluğu).
+    */
+    void LogKullanim()
+    {
+        //DecibelControl();
+        // LevelXpCalculate();
+        CalculateReward(15);
+    }
+
+    void DecibelControl()
+    {
+        // Ses sider'ından gelen 0.0001 - 1 arası değeri desibele çevir
+        float linearVolume = 0.5f;
+        float dbVolume = Mathf.Log10(linearVolume) * 20;
+        // Sonuç: Ses seviyesi kulağa doğal gelen bir azalma/artış sağlar
+    }
+
+    void LevelXpCalculate()
+    {
+        // Oyuncunun XP'sine göre seviyesini hesapla
+        // Formül: level = Log2(XP)
+        float oyuncuXP = 1000f;
+        int level = Mathf.FloorToInt(Mathf.Log(oyuncuXP, 2));
+
+    }
+
+    [Space]
+    [Header("Ekonomi Ayarları")]
+    public float baseGold = 50f;    // 1. seviyede alınan temel miktar
+    public float multiplier = 100f; // Artışın ne kadar güçlü olacağını belirler
+    void CalculateReward(int playerLevel)
+    {
+        /*
+         Formül: Base + (Log10(playerLevel) * Multipler)
+         // Log10(1) = 0 -> 1. seviyede sadece baseGold (50) alırsın
+         // Log10(10) = 1 -> 10. seviyede  50 + (1 * 100) = 150 altın
+         // Log10(100) = 2 -> 100. seviyede 50 + (2 * 100) = 250 altın
+
+        */
+
+        float logValue = Mathf.Log10(playerLevel);
+        float totalGold = baseGold + (logValue * multiplier);
+
+        // UI'da göstermek için tam sayıya yufvarlayalım
+        int finalReward = Mathf.RoundToInt(totalGold);
+        Debug.Log($"logValue: {logValue} | base Altın: {baseGold}");
+        Debug.Log($"Level: {playerLevel} | Kazanılan Altın: {finalReward}");
+    }
+    #endregion
+
+    #endregion
+
+
+    #region Bilimsel Sabitler
+    /*
+    Mathf.PI: 3.14159... (Dairelerle veya trigonometriyle uğraşırken olmazsa olmaz).
+
+    Mathf.E: Euler sayısı (yaklaşık 2.718). Logaritmik büyüme hesaplarında kullanılır.
+    */
+    #endregion
+
+
+    #region PingPong 
+    /*
+        Unity içinde " Mathf.PingPong ", bir değeri 0 ile berlilenen maksimum değer arasında  ileri-geri hareket etterimek için kullanılır
+
+            Genellikle:
+                    - Platform hareketleri
+                    - Işık yoğunluğu
+                    - Ökçek animasyonu,
+                    - Kamera salınımı gibi durumlarda kullanılır
+            
+            Fonksiyon:
+                    float value = Mathf.PingPong(t, length);
+
+                    t -> genelde zaman (Time.time veya artan bir değer)
+                    lengnth -> maksimum değer
+
+                    sonuc ->   0 → length → 0 → length şeklinde gidip gelir
+    */
+
+    void PingPongKullanimi()
+    {
+        // Objeyi sağ-sola hereket ettirme
+        // PingPongMove();
+
+        // Işığın yoğunluğunu nabız gibi değiştirme
+        // LightPulse();
+
+        // Ölçek Animasyonu
+        // SclaePingPong();
+
+        // Platform Hareketi [Gerçek oyun kullanımı]
+        PlatformMove();
+    }
+
+    [Space]
+    [Header("PingPong Değerleri")]
+    public float speed = 2f;
+    public float distance = 5f;
+    private void PingPongMove()
+    {
+        float x = Mathf.PingPong(Time.time * speed, distance);
+        transform.position = new Vector3(x, transform.position.y, transform.position.z);
+
+        /*
+            Ne Oluyor?
+            -------------
+                Time.time -> sürekli artar
+                PingPong → 0 → 5 → 0 → 5
+
+                Yani obje: 0 → 5 → 0 → 5 → 0 şeklinde sağ-sol gider
+                        
+        */
+
+    }
+
+
+    // Işık Yoğunluğunu Nabız Gibi Değiştirme
+    [Space]
+    public Light myLight;
+    public float lightIntensitySpeed = 2f;
+    public float targetLightIntensity = 1f;
+    private void LightPulse()
+    {
+        myLight.intensity = Mathf.PingPong(Time.time * lightIntensitySpeed, targetLightIntensity);
+    }
+
+
+
+
+    // Ölçek Animasyonu
+    [Space]
+    public float scaleSpeed = 2f;
+    private void SclaePingPong()
+    {
+        float scale = Mathf.PingPong(Time.time * scaleSpeed, 1f) + 1f;
+        transform.localScale = Vector3.one * scale;
+    }
+
+
+    // Platform Hareketi {Gerçek Oyun Kullanımı}
+    // Bu yöntem mobil oyunlarda çok kullanılır.
+    [Space]
+    [Header("PingPong Platform Move")]
+    public Vector3 startPos;
+    public Vector3 endPos;
+    public float platformSpeed = 0.5f;
+    private void PlatformMove()
+    {
+        float t = Mathf.PingPong(Time.time * platformSpeed, 1f);
+        transform.position = Vector3.Lerp(startPos, endPos, t);
+    }
+
+
+    #endregion
+
+
+    #region PerlinNoise
+    /*
+    PerlinNoise
+    -------------
+        Genellikle:
+                - Harita (Terrain) oluşturma
+                - Bulut veyaa doku üretimi
+                - Kamera sarsıntısı (Daha gerçekçi)
+                - Rastgele ama doğal dağılan düşman yerleşimi gibi durumlarda kullanılır
+
+        
+        Fonksiyon:
+                float noise = Mathf.PerlinNoise(x,y);
+
+                x,y -> Gürültü haritasındaki kordinatlar (Genelde Time.time veya transform.position kullanılır)
+
+                sonuc -> Her zaman 0.0 ile 1.0 arasında bir değer döner
+
+    */
+
+    void PerlinNoiseKullanimi()
+    {
+        // Doğal Kamera Sallantısı
+        // CameraShake();
+
+        // Nesnenin yüzer gibi hareket etmesi
+        // FloatingEffect();
+
+        // Rastgele doku/arazi yüksekliği
+        // TerrainGeneration();
+    }
+
+    [Space]
+    [Header("PerlinNoise Değerleri")]
+    public float perlinSpeed = 1f;
+    public float perlinIntensity = 2f;
+    public Camera m_Camera;
+
+    // Kamera Sarsıntısı (Doğal His)
+    private void CameraShake()
+    {
+        // Time.time değerini kullanarak zamanla değişsen bir "gürültü" alıyoruz
+        float x = Mathf.PerlinNoise(Time.time * perlinSpeed, 0f);
+        float y = Mathf.PerlinNoise(0f, Time.time * perlinSpeed);
+
+        // Değerleri -1 ile 1 arasına çekmek için (x - 0.5) * 2 yapıyoruz
+        Vector3 shake = new Vector3((x - 0.5f) * perlinIntensity, (y - 0.5f) * perlinIntensity, 0f);
+        m_Camera.transform.localPosition = shake;
+
+        /*
+        Ne Oluyor?
+        -------------
+        Normal Random.Range kullansaydık titreme çok sert olurdu.
+        PerlinNoise, bir önceki değerden bir sonraki değere yumuşak geçiş yapar.
+        Sonuç: Sarsıntı robotik değil, doğal bir "sallanma" gibi olur.
+    */
+    }
+
+    // Yüzer gibi hareket etme (Floating Effect)
+    [Space]
+    public float floatSpeed = 0.5f;
+    public float floatHeight = 1f;
+    private void FloatingEffect()
+    {
+        // Y ekseninde yumuşak bir yükselip alçalma
+        float y = Mathf.PerlinNoise(Time.time * floatSpeed, 0f);
+        transform.position = new Vector3(transform.position.x, y * floatHeight, transform.position.z);
+
+    
+    }
+
+
+    // İki boyutlu gürültü mantığı
+    [Space]
+    public float scale = 10f; // Detay seviyesi
+    private void TerrainGeneration()
+    {
+        // X ve Z koordinatına göre yükseklik belirleme
+        float noise = Mathf.PerlinNoise(transform.position.x / scale, transform.position.z / scale);
+
+        Debug.Log("Bu noktadaki arazi yüksekliği: " + noise);
+    }
+
+    #endregion
+}
