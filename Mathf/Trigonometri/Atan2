@@ -1,0 +1,285 @@
+
+using UnityEngine;
+/*
+
+===========================================================
+TRIG_ATAN2.cs
+===========================================================
+
+    * Atan2, matematikte ve Unity’de iki nokta arasındaki farktan açı hesaplamak için tasarlanmış.
+    * Yani bir hedef / pozisyon farkı (diff = target.position - origin.position) olmalı.
+
+    * Atan2, slope (yükselti / mesafe) veya x/y farklarından güvenli bir şekilde açı hesaplamak için kullanılır.
+
+    * Atan2, atan fonksiyonunun x=0 problemine çözüm sağlar ve tüm çeyrekler için doğru açıyı döndürür.
+
+
+---------------------------------------------------------------
+
+    1) MATEMATİK
+    -------------
+        Atan2(y, x) = θ
+
+            - y: karşı / vertical fark
+            - x: komşu / horizontal fark
+            - θ: radyan cinsinden açı (daha sonra dereceye çevrilebilir)
+
+
+        Örnek:
+                x = 1, y = 1
+                     atan2(1,1) = 45°
+                x = -1, y = 1
+                    atan2(1,-1) = 135°
+                x = -1, y = -1
+                     atan2(-1,-1) = -135° veya 225° (Unity angle sistemi)
+
+
+---------------------------------------------------------------
+
+    2) UNITY MANTIĞI
+    ----------------
+        - Mathf.Atan2(y, x) kullanılır
+        - Dönen açı radyandır, eğer derece istiyorsan:
+                    float angleDeg = Mathf.Atan2(y, x) * Mathf.Rad2Deg;
+
+
+        - Atan2(x, 0) gibi durumda hata vermez, atan gibi sonsuzluk problemi yoktur
+        - Yani pratikte atan2 = atan(y/x) + çeyrek düzeltmesi + x=0 kontrolü
+
+
+          UNITY 3D KOORDİNAT NOTU
+          -----------------------
+                Unity'de çoğu 3D oyunda hareket düzlemi:
+                                
+                                XZ = yatay düzlem
+                                 Y = yükseklik
+
+                Bu yüzden hedefe dönme hesapları genelde şöyle yapılır:
+
+                            Vector3 diff = target.position - transform.position;
+                            
+                            float angle = Mathf.Atan2(diff.x, diff.z) * Mathf.Rad2Deg;
+
+                            transform.rotation = Quaternion.Euler(0,angle,0);
+
+                Burada:
+                        diff.x -> sağ / sol fark
+                        diff.z -> ileri / geri fark
+
+                Y ekseni kullanılmaz çünkü o yükseklik eksenidir
+
+
+
+
+        YANİ:
+
+            Matematikte: Atan2(y,x)
+
+            Unity 3D yön hesaplama: Atan2(x,z)
+
+                    Sebep: Unity forward = z ekseni
+                    
+
+---------------------------------------------------------------
+    
+    3) OYUNLARDA KULLANIM
+    --------------------
+            - Projectile / top atışı açıları
+            - Kamera eğimi (look up / down)
+            - Objeye veya hedefe bakma
+            - Slope -> angle dönüşümleri
+            - Aim sistemleri
+
+
+*/
+public class Trig_Atan2 : MonoBehaviour
+{
+
+    public enum Atan2Type
+    {
+        Yaw,
+        Pitch,
+        YawAndPitch,
+        ProjectileAngle,
+        LookAtTarget
+    }
+    [Header("Atan2 Tipi")]
+    public Atan2Type atan2Type = Atan2Type.ProjectileAngle;
+
+    [Header("Hedef / Target")]
+    public Transform _target;
+
+    [Header("Projectile Ayarları")]
+    public float projectileSpeed = 10f;
+    public Rigidbody ProjectilePefab;
+    void Update()
+    {
+        if (_target == null) return;
+
+        switch (atan2Type)
+        {
+            case Atan2Type.Yaw: Yaw(); break;
+            case Atan2Type.Pitch: Pitch(); break;
+            case Atan2Type.LookAtTarget:
+            case Atan2Type.YawAndPitch: YawAndPitch(); break;
+            case Atan2Type.ProjectileAngle: ProjectileAngle(); break;
+
+        }
+    }
+
+
+
+    #region Yaw (XZ düzlemi) [Sağ - sol bakış]
+
+    /*
+    Hedefe sağa veya sola dönme açısı
+        
+        XZ düzlemi = yatay hareket
+        Y ekseni   = dönme ekseni
+    */
+
+    private void Yaw()
+    {
+        Vector3 diff = _target.position - transform.position;
+        diff.y = 0;
+
+        float yaw = Mathf.Atan2(diff.x, diff.z) * Mathf.Rad2Deg;
+
+        transform.rotation = Quaternion.Euler(0, yaw, 0);
+    }
+
+    #endregion
+
+
+    #region Pitch (Yukarı / Aşağı bakış)
+    /*
+        Hedefe yukarı ve aşağı bakması açısı (Pitch)
+
+             Y farkı     = hedefin yüksekliği (diff.y)
+            XZ mesafesi  = yatay uzaklık (diff.x ve diff.z)
+            Pitch açısı = Atan2(Y farkı, yatay mesafe)
+
+        Unity mantığı.
+                    - X eksni etradında dönme
+                    - Yaw değişmeden sadece yukarı/aşağı bakış uygulanır
+    */
+
+    private void Pitch()
+    {
+        Vector3 diff = _target.position - transform.position;
+
+        // Yatay mesafe (XZ düzlemi)
+        float horizontalDistance = new Vector2(diff.x, diff.z).magnitude;
+
+        // Pitch açısı
+        float pitch = Mathf.Atan2(diff.y, horizontalDistance) * Mathf.Rad2Deg;
+
+        // Mevcut rotasyonu al, sadece x eksenini değiştir
+        Vector3 currentEuler = transform.rotation.eulerAngles;
+        transform.rotation = Quaternion.Euler(-pitch, currentEuler.y, currentEuler.z);
+
+    }
+    #endregion
+
+    #region Yaw + Pitch (Tam 3D bakış) [LookAtTarget]
+    /*
+        Hedefe yatay ve dikey bakış açısını aynı anda uygular
+
+                Yaw = XZ düzlemi (sağa-sola) -> Y ekseni
+                Pitch = Yukarı-aşağı bakış - X ekseni (negatif yönle uygulanır)
+
+        Unity mantığı:
+
+            forward = Z ekseni
+            right   = X ekseni
+            up      = Y ekseni
+
+| Yöntem                    | Açıklama                             | Avantaj                                   |
+| ------------------------- | ------------------------------------ | ----------------------------------------- |
+| Yaw + Pitch (atan2)       | Matematiksel açıları tek tek hesapla | Öğrenme / özelleştirme için iyi           |
+| `Quaternion.LookRotation` | Unity’nin hazır fonksiyonu           | Tek satır, hata yok, profesyonel kullanım |
+
+    */
+
+    private void YawAndPitch()
+    {
+        Vector3 diff = _target.position - transform.position;
+        if (diff.sqrMagnitude < 0.001f) return; // Hedef çok yakınsa çık
+
+        // 1) Yaw: XZ düzlemi
+        float yaw = Mathf.Atan2(diff.x, diff.z) * Mathf.Rad2Deg;
+
+        // 2) Pitch: Y ekseni farkı ve yatay mesafe 
+        float horizontalDistance = new Vector2(diff.x, diff.z).magnitude;
+        float pitch = Mathf.Atan2(diff.y, horizontalDistance) * Mathf.Rad2Deg;
+
+        //  pitch sınırlama (isteğe bağlı)
+        pitch = Mathf.Clamp(pitch, -45, 45);
+        // 3) Rotasyonu uygula
+        transform.rotation = Quaternion.Euler(-pitch, yaw, 0);
+
+        Debug.Log($"Yaw: {yaw}, Pitch: {pitch}");
+
+    }
+
+    /*
+    
+    Açıklamalar
+
+            -->  diff = target.position - transform.position → hedef farkı
+            -->  yaw = atan2(diff.x, diff.z) → XZ düzleminde sağa-sola açı
+            -->  horizontalDist = sqrt(diff.x² + diff.z²) → yatay mesafe
+            -->  pitch = atan2(diff.y, horizontalDist) → yukarı-aşağı açı
+            -->  -pitch → Unity’de X ekseninin pozitif yönü aşağıyı gösterdiği için ters çevrilir
+            -->  Roll her zaman 0 → objenin yan yatmasını engeller
+    */
+
+    #endregion
+
+
+
+    #region Projectile Angle (Top / Projectile)
+    private void ProjectileAngle()
+    {
+        Vector3 diff = _target.position - transform.position;
+        diff.y = 0;
+
+
+        if (diff.sqrMagnitude < 0.001f) return;
+
+
+        float angle = Mathf.Atan2(diff.x, diff.z) * Mathf.Rad2Deg;
+
+        transform.rotation = Quaternion.Euler(0, angle, 0);
+
+        Debug.Log($"ProjectileAngle: angle={angle}");
+
+        // Örnek top fırlatma
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Rigidbody projectile = Instantiate(ProjectilePefab, transform.position, Quaternion.identity);
+
+
+            Vector3 direction = diff.normalized;
+            projectile.linearVelocity = direction * projectileSpeed;
+        }
+
+
+    }
+    #endregion
+
+
+
+    /*  #region Camera Slope (Kamera için) -> CameraSlope’u gerçek kamera bakışı için kullanmaksa, bunu kamera objesinin altına eklemelisin.
+     private void CameraSlope()
+     {
+         Vector3 diff = _target.position - transform.position;
+
+         float angle = Mathf.Atan2(diff.y, diff.z) * Mathf.Rad2Deg;
+
+         // X ekseninde bakış
+         transform.rotation = Quaternion.Euler(-angle, 0, 0);
+     }
+
+     #endregion */
+}
