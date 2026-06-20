@@ -1,0 +1,222 @@
+using UnityEngine;
+
+/*
+===========================================================
+TRIG_COS_FULL.cs
+===========================================================
+
+    Cos = yatay dalga üretir
+        - X ekseni: sağ-sol hareket
+        - Z ekseni: ileri-geri hareket
+
+
+    Unity'de çoğu zaman:
+            
+                - X ekseni dalgası (horizontal)
+                - Z ekseni dalgası hareketi
+                - Rotation salınımı
+                - Sin ile birlikte dairesel hareket
+
+
+    1) MATEMATİK
+    ----------------
+        Cos(θ) = Komşu / hipotenüs
+
+        Birim çemberde: cos değeri X eksenindir
+
+            0°  -> 1
+            90° -> 0
+            180° -> -1
+            270° -> 0
+
+        Yani: Cos fonksiyonu yatay hareket üretir
+
+        Başlangıç fazı:
+                    - Cos(0) = 1, Sin(0) = 0
+                    - Bu, nesnenin hareketine nereden başlanacağını belirler
+
+                            * Cos ile başlarsak: tepe noktasından başlar (örn. X = 1)
+                            * Sin ile başlarsak: orta noktasından başlar (örn. X = 0)
+
+
+    ---------------------------------------------------------------
+
+    2) UNITY MANTIĞI
+    ------------------
+        Unity'de:
+                -> Mathf.Cos(angle)
+                -> angle radyan olmalıdır
+                -> Degree -> Radian dönüşümü: float radian = angle * Mathf.Deg2Rad;
+
+        
+        3D Kullanımda:
+
+                - X ekseni dalgası -> transform.position.x = Cost(t) * amplitude
+                - Z ekseni dalgası -> transform.position.z = Cost(t) * amplitude
+                - Rotation salınımı -> transform.rotation.y = Cost(t) * maxAngle
+                - Dairesel hareket -> x = Cos(t) * radius, z = Sin(t) * radius
+
+        Cos + Sin birlikte kullanılırsa: Dairesel hareket oluşur
+
+                X = Cos
+                Z = Sin
+
+
+    ---------------------------------------------------------------------
+
+    3) OYUNLARDA KULLANIM
+    ------------------------------
+
+        -> Platform veya item X ekseni dalgası (sağ-sol salnım)
+        -> Düşman veya tran Z ekseni dalgası (ileri-geri salınım)
+        -> Dairesel hareket (drone, orbit kamera, gezegen sistemi, radar)
+        -> Rotation salınımı (fan, radar, turret)
+
+    
+    ------------------------------------------------------------------------
+
+    3D Kullanım İpuçları:
+    ---------------------
+
+        - Yatay dalgalar için X veya Z ekseni kullaılır
+        - Dairesel hareket için X = Cos(t), Z = Sin(t)
+        - Rotation için Cos(t) veya Sin(t) ile tepe veya orta noktadan başlama seçimi yapılabilir
+        - Başlangıç fazı, nesnenin hareketinin başlangıcı. konumunu belirler
+*/
+public class Trig_Cos : MonoBehaviour
+{
+    [Header("Genel")]
+    public float amplitude = 2f; // genlik
+    public float speed = 2f; // angular speed
+    private float timer = 0f;
+
+    [Header("Dairesel Hareket")]
+    public float radius = 3f;    // dairesel hareket yarıçapı
+    public Transform center;     // dairesel hareket merkezi
+
+    [Header("Snake Motion")]
+    public float forwardSpeed = 2f; // snake motion ileri hiz
+
+
+    [Header("Rotation Salınımı")]
+    public float maxAngle = 30f; // rotation salnımı max açı
+
+    private Vector3 startPos;
+    void Start()
+    {
+        startPos = transform.position ;
+    }
+
+
+
+    void Update()
+    {
+
+        // XEkseniDalgaHareketi();
+        // ZEkseniDalgaHareketi();
+        // DaireselHareket();
+        
+        // RotationSalinimi();
+
+    }
+
+    #region X Ekseni Dalga Hareketi -> x = cos(t)
+    /*
+        Kullanım:
+                -> Platform ileri geri
+                -> floating item sağ-sol salınımı
+                -> Kapı veya trap hareketi
+
+        Not: Başlangıç Cos(0)=1 olduğu için nsene sağdan başlar
+    */
+
+    private void XEkseniDalgaHareketi()
+    {
+        timer += Time.deltaTime * speed;
+        float x = Mathf.Cos(timer) * amplitude;
+
+        transform.position = startPos + new Vector3(x, 0, 0);
+    }
+    #endregion
+
+
+    #region Z Ekseni Dalga Hareketi -> z = cos(t)
+    /*
+        Kullanım:
+                -> Düşman ileri-geri devriye
+                -> Kapı açılıp kapanma
+                -> Tuzakların aslınımı
+
+        Not: Başlangıç Cos(0) = 1 olduğundan ileri yönden başlar
+    */
+
+    private void ZEkseniDalgaHareketi()
+    {
+        timer += Time.deltaTime * speed;
+        float z = Mathf.Cos(timer) * amplitude;
+
+        transform.position = startPos + new Vector3(0, 0, z);
+    }
+    #endregion
+
+
+    #region Dairesel Hareket (Cos + Sin)
+    /*
+        x = Cos(t)
+        z = Sin(t)
+
+        Kullanım:
+                -> Drone
+                -> Orbit kamera
+                -> Gezegen sistemi
+                -> Dönen düşmanlar
+                -> Radar sistemleri
+    */
+    private void DaireselHareket()
+    {
+        timer += Time.deltaTime * speed;
+        float X = Mathf.Cos(timer) * radius;
+        float Z = Mathf.Sin(timer) * radius;
+
+        transform.position = center.position + new Vector3(X, 0, Z);
+    }
+    #endregion
+
+
+
+  
+
+
+    #region Rotation Salınımı
+    /*
+       Matematiksel form => y = A * cos(ωt)
+
+       | Matematik         | Unity     |
+       | ----------------- | --------- |
+       | A (amplitude)     | maxAngle  |
+       | ω (angular speed) | speed     |
+       | t                 | Time.time |
+
+        Unity karşılığı => float angle = Mathf.Cos(timer) * maxAngle;
+
+
+        Kullanım:
+                -> fan
+                -> radar
+                -> turret scanning
+
+
+        Not:
+            Başlangıç Cos(0)=1 olduğu için nesne tepe noktasından hareketle başlar
+    */
+
+    private void RotationSalinimi()
+    {
+        timer += Time.deltaTime * speed;
+
+        float angle = Mathf.Cos(timer) * maxAngle;
+
+        transform.rotation = Quaternion.Euler(0, angle, 0);
+    }
+    #endregion
+}
