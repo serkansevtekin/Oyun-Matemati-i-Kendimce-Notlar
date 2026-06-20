@@ -1,0 +1,285 @@
+using UnityEngine;
+
+/*
+===========================================================
+TRIG_SIN.cs
+===========================================================
+    Sin = dalga üretir
+        - Y ekseni: yukarı-aşağı hareket
+        - Z ekseni: ileri-geri hareket
+
+    Unity'de çoğu zaman:
+
+            - Y dalgası (hover)
+            - Z dalgası (ileri-geri)
+            - rotasyon dalgası
+
+    1) MATEMATİK
+    -------------
+
+        Sinüs bir açının "karşı kenar / hipotenüs" oranıdır
+
+            Sin(θ) = Karşı / hipotenüs
+
+        Birim çemberde: sin değeri Y eksenidir
+        
+                0°  -> 0
+                90° -> 1
+                180° -> 0
+                270° -> -1
+
+        Yani: Sin fonksiyonu yukarı-aşağı hareket üretir.
+
+    ---------------------------------------------------------------
+
+
+    2) UNITY MANTIĞI
+    ------------------
+
+        Unity'de:
+                -> Mathf.Sin(angle)
+                -> Ama angle RADYAN olmalıdır
+                -> Degree -> Radian dönüşümü:
+                                            - float radian = angle * Mathf.Deg2Rad;
+
+
+        Sin çoğu zaman Z ekseniyle veya dairesel hareketle kullanılır. Çünkü:
+
+                * Sin -> Y veya Z dalgası üretir
+                * Cos -> diğer ekseni üretir
+                * Sin + Cos -> daire
+
+        Kritik Bilgi (Oyun Matematiği):
+
+            Sin fonksiyonunun gerçek görevi: -1 -> 1 arasında smooth değer üretir
+
+        
+       
+
+    ÖNEMLİ NOT (Başlangıç Fazı):
+    ---------------------------------
+    - Sin(0) = 0   → hareket ortadan başlar (yukarı veya sağa doğru)
+    - Cos(0) = 1   → hareket tepe noktasından başlar (başlangıçta maksimum pozisyonda)
+    - Bu fark, nesnenin hareketin hangi noktadan başlamasını kontrol etmek için kullanılır.
+
+
+
+    ---------------------------------------------------------------
+
+
+    3) OYUNLARDA NEREDE KULLANILIR
+    ------------------------------
+
+        -> Zıplama animasyonu
+        -> Dalga hareketi
+        -> Kamera sallanması
+        -> Platform hareketi
+        -> smooth motion
+        -> oscillation
+        -> periodic movement
+
+    ---------------------------------------------------------------
+    
+    Unity'de Sin'in En Güçlü Kullanımı
+
+        Genelde tek başına değil:
+                                -> Sin + Cos
+                                -> Sin + Time
+                                -> Sin + PerlinNoise
+                                -> Sin + Lerp
+    
+
+
+*/
+
+
+
+
+public class Trig_Sin : MonoBehaviour
+{
+
+
+    [Space]
+    [Header("Genel")]
+    public float amplitude = 2f; // genlik
+    public float speed = 2f; // hız
+    private float timer = 0f;
+    Vector3 startPos;
+
+    void Start()
+    {
+        startPos = transform.position;
+    }
+    void Update()
+    {
+
+        // DalgaHareketi();
+        // ZEkseniDalgaHareketi();
+        // DaireHareketi();
+        SnakeMotion();
+        // RotationSalinimi();
+
+    }
+
+
+
+    #region Y ekseni Dalga Harketi -> y = sin(t)
+    /*
+        Kullanım:
+                -> platform
+                -> floating item
+                -> hover efekti
+    */
+    private void DalgaHareketi()
+    {
+        timer += Time.deltaTime * speed;
+        float y = Mathf.Sin(timer) * amplitude;
+
+        transform.position = startPos + new Vector3(0, y, 0);
+    }
+
+    #endregion
+
+
+    #region Z Ekseni Dalga Hareketi [3D'de çok kullanılır]
+
+    /*
+        z = sin(t)
+
+        Kullanım:
+                -> düşman ileri geri devriye
+                -> kapı salınıı
+                -> trap hareketi
+    */
+
+    private void ZEkseniDalgaHareketi()
+    {
+        timer += Time.deltaTime * speed;
+        float z = Mathf.Sin(timer) * amplitude;
+        transform.position = startPos + new Vector3(0, 0, z);
+
+    }
+    #endregion
+
+
+    #region Daire Hareketi (Sin + Cos) [3D oyunların en sık kullanımıdır] !!
+    /*
+        x = cos(t)
+        z = sin(t)
+
+        Kullanım:
+                -> drone
+                -> orbit kamera
+                -> dönen düşman
+                -> gezegen sistemi
+    */
+
+    [Header("Daire Hareketi")]
+    public float radius = 2f;
+    public Transform center;
+    private void DaireHareketi()
+    {
+        timer += Time.deltaTime * speed;
+        float x = Mathf.Cos(timer) * radius;
+        float z = Mathf.Sin(timer) * radius;
+
+        transform.position = center.position + new Vector3(x, 0, z);
+    }
+
+    #endregion
+
+
+    #region İleri Giderken Dalga (3D Snake Motion) [Bu da çok kullanılır]
+    /*
+        x = sin(t)
+
+       Hangisini Ne Zaman Seçmelisin?
+                    x = Sin Kullan: 
+                            -> Eğer yılanın veya merminin tam olarak karakterin namlusundan veya merkezinden çıkıp sonra sağa sola salınmasını istiyorsan "Sin" daha mantıklıdır
+
+                    x = Cos Kullan:
+                            -> Eğer nesnenin zaten "açılmış" bir konumdan (örneğin karakterin biraz sağından) kavis yaparak gelmesini istiyorsan  "Cos" daha mantıklıdır
+
+        Aradaki Tek Fark: "Nereden Başlıyoruz?"
+            Gelin bu iki fonksiyonun başlangıç anına (Time.time = 0) baklım:
+
+                    1. Matf.Sin(0): Sonuç 0'dır.
+
+                            -> Nesne tam merkezden (sıfır noktasından) kareketine başlar ve sağa doğru açılmaya başlar
+
+
+                    2. Mathf.Cos(0): Sonuç 1'dir.
+
+                            -> Nesn merkzin en sağından (veya yukarısından) başlar ve içeri doğru süzülür
+
+
+        Kullanım:
+                -> yılan hareketi
+                -> uçan yaratık
+                -> mermi pattern
+    */
+
+    [Header("Saneke Motion")]
+    public float forwardSpeed = 5f;
+    private void SnakeMotion()
+    {
+
+        // 1. Zaman
+          timer += Time.deltaTime * speed;
+
+          // 2. Dalga 
+          float x = Mathf.Sin(timer) * amplitude;
+          float z = timer * forwardSpeed;
+
+          // 3. Yeni pozisyon
+          Vector3 newPos = startPos + new Vector3(x, 0, z);
+
+          // 4. Hareket yönü
+          Vector3 direction = newPos - transform.position;
+
+          // 5. Konumu güncelle
+          transform.position = newPos;
+
+          // 5. Rotasyonu güncelle ve normalize et (Eğer hareket varsa döndür)
+          if (direction.sqrMagnitude > 0.0001f)
+          {
+              direction.Normalize();
+              transform.rotation = Quaternion.LookRotation(direction);
+          } 
+
+    }
+    #endregion
+
+
+    #region Rotation Salınımı
+
+    /*
+        Matematiksel form => y = A * sin(ωt)
+
+        | Matematik         | Unity     |
+        | ----------------- | --------- |
+        | A (amplitude)     | maxAngle  |
+        | ω (angular speed) | speed     |
+        | t                 | Time.time |
+
+        Unity karşılığı => angle = sin(Time.time * speed) * maxAngle
+
+
+
+        Kullanım:
+                -> fan
+                -> radar
+                -> turret scanning
+
+    */
+    [Header("Rotation Salınım")]
+    public float maxAngle = 30f;
+    private void RotationSalinimi()
+    {
+        timer += Time.deltaTime * speed;
+        float angle = Mathf.Sin(timer) * maxAngle;
+
+        transform.rotation = Quaternion.Euler(0, angle, 0);
+    }
+    #endregion
+}
