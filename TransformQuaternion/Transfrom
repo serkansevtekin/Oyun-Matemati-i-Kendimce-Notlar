@@ -1,0 +1,374 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+public class TransformIslemleri : MonoBehaviour
+{
+    public Transform _obj1;
+    public Transform _obj2;
+    void Start()
+    {
+        if (_obj1 == null || _obj2 == null) return;
+
+        /*  // Obje Global ve Local position, rotation and scale
+         // Global ve Local İpucu -> Eğer objede bir "Parent" yoksa, "position" and "localPosition" değerleri bir birine eşit olacaktır
+
+         //-----------------------------------------------------------------------------------
+         // Position
+         // transform.position -> Objenin oyun dünyasındaki (Global) mutlak konumu
+         Debug.Log("Position: " + transform.position);
+
+         // transform.localPosition -> Objenin ebeveynine (Parent) göre olan göreceli konumu
+         Debug.Log("Local Position: " + transform.localPosition);
+
+         //-----------------------------------------------------------------------------------
+         // Rotation
+         // tranform.rotation -> Objenin dünya eksenindeki mutlak dönüş açısı (Quaternion)(x, y, z, w)
+         Debug.Log("Rotation: " + transform.rotation);
+
+         // tranform.localRotation -> Objenin ebeveynine göre olan göreceli dönüş açısı (Quaternion)(x, y, z, w)
+         Debug.Log("Local Rotation: " + transform.localRotation);
+
+         //-----------------------------------------------------------------------------------
+         // Scale
+         // transform.localScale -> Objenin ebeveynine bağlı olarak belirlenen yerel ölçek veya büyüklük
+         Debug.Log("Local Scale: " + transform.localScale);
+
+         // transform.lossyScale -> Objenin dünyadaki net/toplam ölçeği (Sadece Okunabilir, hiyerarşiden etkilenmiş son hali)
+         Debug.Log("Lossy Scale: "+ transform.lossyScale); */
+
+
+        /*   // Merkeze(0,0,0) göre uzunluk, uzunluğun karesi, yön ve tam korditatları yazdırma
+          // transform.position.normalized -> Merkezden (0,0,0) hangi yöne doğru duruyorum? (Bu değerin uzunluğu her zaman 1'dir)
+          Debug.Log(transform.position.normalized);
+
+          // transform.position.magnitude -> Merkeze (0,0,0) ne kadar uzağım?
+          Debug.Log(transform.position.magnitude);
+
+          // transform.position.sqrMagnitude -> Merkeze (0,0,0) olan uzaklığımın karesi ne?
+          Debug.Log(transform.position.sqrMagnitude);
+
+          // transform.position.ToString() -> Koordinatları (1.0, 2.5, 3.0) gibi okunabilir bir metne (string) dönüştürür.
+          Debug.Log(transform.position.ToString()); */
+
+        /*    // KISA YOL YÖN VEKTÖRLERİ (Global)
+           // Bu vektörler her zaman 1 birim uzunluğundadır (Otomatik normalized)
+
+           transform.forward   -> Objenin baktığı yön(Eksen Z)
+
+           tranform.right  -> Objenin sağ yön(Eksen X)
+
+           tranform.up  -> Objenin yukarısı kafa yönü(Eksen Y)
+
+           // İpucu: Sol için -transform.right, Arka için -transform.forward kullanılır. */
+
+        /*     //  Bir objeye aynı anda hem pozisyon hem rotasyon verme (Profrmans artışı)
+            Vector3 pos = new Vector3(1f, 5f, 3f);
+            Quaternion rot = Quaternion.Euler(10,20,35);
+
+            // Unity objeyi iki kez hesaplamak zorunda kalıyor ve buda Performans kaybı
+            // transform.position = pos;
+            //  transform.rotation = rot;
+
+            // transform.SetPositionAndRotation(pos, rot) -> Global 
+            transform.SetPositionAndRotation(pos,rot); 
+
+            // transform.SetLocalPositionAndRotation -> Local
+            transform.SetLocalPositionAndRotation(pos,rot);  */
+
+
+        /*  // Pozisyon ve rostasyon değerini tek satırda almak (Performans artışı)
+
+         // İki kere işlem yapıldığı için (Performansa OLUMSUZ etiki vardır)
+         // Vector3 pos = transform.position;
+         // Quaternion rot = transform.rotation;
+
+         // Global kullanım
+         transform.GetPositionAndRotation(out Vector3 PosCikti, out Quaternion RotCikti);
+         Debug.Log("Global Pozisyon: " + PosCikti);
+         Debug.Log("Global Rotation: " + RotCikti);
+
+         // Local kullanım
+         transform.GetLocalPositionAndRotation(out Vector3 localPosCikti, out Quaternion localRotCikti);
+         Debug.Log("Local Pozisyon: " + localPosCikti);
+         Debug.Log("Local Rotation: " + localRotCikti);
+
+         Neden out kelimesini kullanıyoruz?
+
+                 Buradaki ' out ', "Ben sana boş bir kutu(değişken) veriyorum, sen bu methodun içinden o kuyutu doldurup bana geri ver" demektir. Bu sayede tek bir satırda iki farklı veri tipini (Vector3  ve Quaternion) tek seferde almış oluyoruz. */
+
+
+
+        /* Global ve Local için neyi merkez alarak hareket edeceğine karar ve
+         
+            Space.Self -> (Yerel): Objenin kendi önü, arkası ve yanlarına göre işlem yapar; obje döndüğünde onunla birlikte eksenleride döner
+
+            Space.World -> (Küresel): Sahnedeki sabit  Kuzay, Güney, Doğu ve Batı (X,Y,Z) yönlerine göre işlem yapar; Obje ne tarafa bakarsa baksın "Dünya'nın yukarı yönü" asla değişmez 
+        
+        
+        */
+
+
+        /* // transform.Rotate() -> Objeleri dönüdürmek için kullanılır. 
+        //                    -> Euler açılarını ($x, y, z$) kullandığı için matematiksel olarak "Gimbal Lock"  riskini her zaman taşır.
+        //                    -> Start içinde obje doğduğu anda ona sabit bir dönüş açısı verir ve durur (Tek seferlik yön belirleme).
+        //                    -> Update içinde: Obje her karede verilen açıda dönmeye devam eder ve bir dönüş animasyonu/hareketi oluşturur (Sürekli dönme).
+        //transform.Rotate(5,5,5, Space.World );
+        // Update içinde rotate kullanımı
+        // transform.Rotate(speed * Time.deltaTime * 3f, 0f, 0f, Space.World);
+        //  // Update içinde ve Parenti var rotate kullanımı
+        // _obj1.Rotate(25f * Time.deltaTime * 3f, 0f, 0f, Space.Self); */
+
+
+
+        /*  // Parent-child and root
+            // _obj1'i, _obj2'nin çocuk objesi yap [Yani parent ataması yapıyoruz] !!!! SetParent(transform, true/false) daha çok kullanılıyor !!!!!
+           // Paren olacak -> _obj2
+           // çocuk olcak -> _obj1
+           //_obj1.parent = _obj2.transform;
+           // mevuct objeyi çocuk obje yap
+           //transform.parent = _obj1.transform;
+
+           // Gene parent ata ama: [Bu daha çok tercih ediliyor]
+           // -> true (Varsayılan): Obje dünya üzerindeki yerini, açısını ve boyutunu korur. Sen onu bir parent'a bağladığında, Unity arka planda onun lokal değerlerini öyle bir hesaplar ki obje sahnede bir milim bile kıpırdamaz. (Senin "mıknatısla çekilen odun" senaryonda odun oyuncuya ulaştığı an bunu kullanmalısın ki odun bir anda sağa sola fırlamasın).
+           // -> false: Obje dünya üzerindeki yerini unutur. Direkt olarak parent'ın koordinat sistemine "çakılır". Eğer parent (0,0,0) noktasındaysa ve obje de önceden (10,10,10) noktasındaysa, false dediğin an obje parent'ın tam merkezine (0,0,0) ışınlanmış gibi olur.
+           //_obj1.SetParent(_obj2,false);
+
+           // Objenin parent tan kurarmak için
+           _obj1.SetParent(null);
+
+
+           // en üst Parent objeyi döndürür. Eğer üst obje yoksa kendisini döndürür
+           Debug.Log(transform.root);
+           Debug.Log(_obj1.transform.root);
+
+
+           // Kardeş index'ini ayarlar -> Objenin kardeş dizilimindeki sırasını değiştirmek için
+           // Bir obje aynı ana bojeyi paylaşıyor ve aynı seviyede iseler bunlar kardeş olarak bilinir
+           _obj1.transform.SetSiblingIndex(0);
+
+
+           // verilen objenin mevcut kardeş sırasını verir[Yani obje karşeler arasında kaçıncı index'te]
+           Debug.Log(_obj1.transform.GetSiblingIndex());
+
+
+           // Objeyi karedeşleri arasında en üste taşıma
+           _obj2.transform.SetAsFirstSibling();
+
+           // Objeyi kardeşleri arasında en alta taşıma
+           _obj1.transform.SetAsLastSibling(); 
+           
+           
+             // KARDEŞLİK KONTROLÜ (IsSubclassOf değil, hiyerarşik sıra kontrolü)
+        // Bir objenin hiyerarşide başka bir objeden daha üstte veya altta olduğunu anlamak için kullanılır.
+        bool ustteMi = _obj1.GetSiblingIndex() < _obj2.GetSiblingIndex();
+
+           
+           
+           */
+
+
+        /* // Çocuk Objeler arasında arama
+        // transform.Find("obj2") -> Sadece bu objeye bağlı olan (altındaki) çocuk objeler arasında "obj2" ismini arar.
+
+        // 1. Aramayı bir kez arama yap ve sonucu değişkene aktar
+        Transform bulunanTransform = transform.Find("obj2");
+
+        // 2. Değişken boş değilse (yani obje bulunduysa) işlemi yap
+        if (bulunanTransform != null)
+        {
+
+            bulunanTransform.name = "İsim değiştir";
+
+
+            // Eğer gameObject referansında başak bir işlem için ihtiyaç varsa
+            GameObject newObj = bulunanTransform.gameObject;
+            newObj.SetActive(false);
+        }
+        else
+        {
+            // Eğer hiyerarşide "obj2" yoksa oyunun çökmez, buraya düşer
+            Debug.LogWarning("Uyarı: 'obj2' isimli alt obje bulunamadı!");
+        } */
+
+
+        /*    // Objenin çocuk sayısı
+           Debug.Log(transform.childCount);
+    */
+
+
+        /*  // Belirtilen indexteki çocuğa ulaşma (öncesinde  kontroller yapılması önerilir)
+         Debug.Log(transform.GetChild(1).name); */
+
+
+        /*    // çocuk objelere for ile ulaşıp işlem yapma
+           // 1. yol
+           List<Transform> childTransfromTypeList = new List<Transform>();
+           List<GameObject> childGameObjectTypeList = new List<GameObject>();
+           for (int i = 0; i < transform.childCount; i++)
+           {
+
+               Debug.Log(transform.GetChild(i).name);
+               childTransfromTypeList.Add(transform.GetChild(i));
+               childGameObjectTypeList.Add(transform.GetChild(i).gameObject);
+           }
+
+           //2. yol
+           foreach (Transform item in transform)
+           {
+               Debug.Log(item.name);
+           }
+
+
+           // 3.yol (Eğer amacın sadece çocukları bir listede toplamaksa, for döngüsü yerine System.Linq kullanarak tek satırda liste olarak alabiliriz)
+           // using System.Linq; // Bu olmazsa Cast ve ToList hata verir.
+           List<Transform> childiren = transform.Cast<Transform>().ToList();
+    */
+
+
+        /*   // Bu özellik, objenin hiyerarşideki toplam boyutunu (kendisi + tüm çocukları + tüm torunları) verir. Yani sadece "yer işgalini" değil, altındaki tüm dallanmayı sayar.
+          Debug.Log(transform.hierarchyCount); */
+
+
+        /* // hierarchyCapacity, bir objenin alt hiyerarşisinde (kendisi ve tüm alt dalları) performans kaybı yaşamadan barındırabileceği toplam nesne sayısı için bellekte ayrılan hazır kontenjandır.
+        Debug.Log(transform.hierarchyCapacity); */
+
+
+
+        /*       // Bir objenin çocuk obje olup olmadığı kontrol etme
+              // _obj1, _obj2'nin çocuk objesimi?
+              if (_obj1.IsChildOf(_obj2))
+                  Debug.Log("EVET");
+              else
+                  Debug.Log("HAYIR"); */
+
+
+
+        /*  // Tüm Çocukları Ayırma (DetachChildren)
+         // Bu komut objeye bağlı tüm çocukları tek seferde hiyerarşiden ayırı ve onları birer bağımsız "Root" obje yapar
+         transform.DetachChildren(); */
+
+
+
+        /*// DÜNYA VE YEREL KOORDİNAT DÖNÜŞÜMLERİ
+
+           [YEREL -> DÜNYA]
+           1. transform.TransformPoint (POZİSYON İÇİN)
+               -> Yerel bir noktayı (nokta konumu), objenin Position, Rotation ve Scale değerlerini hesaba katarak Dünya koordinatına çevirir
+               -> "Objemin 2 birim önündeki NOKTANIN dünya üzerindeki tam adresi nedir?" sorusuna yanıt verir
+
+               Kullanımı:
+                       Vector3 dunyaNoktasi = transform.TransformPoint(new Vector3(0,0,2f));
+
+               Örnek:
+                   Eğer obje (0,0,10) konumundaysa, sonuç (0,0,12) civarı bir yer olur
+
+
+
+           2. transform.TransformDirection (SADECE YÖN İÇİN)
+               -> Yerel bir yönü, sadece Rotation (dönüş) değerini hesana katarak Dünya koorditatlarına çevirir
+               -> Scale (ölçek) ve Position (konum) bu sonucu değiştirmez.
+               -> Uzunluk korunur
+               -> " Objem sağa bakıyorsa, Dünya'nın hangi yönüne bakıyor?" sorusuna yanıt verir
+
+               Kullanım:
+                   Vector3 dunyaYonu = transform.TransformDirection(Vector3.right);
+
+                   // Sonuç her zaman 1 birim uzunluğunda bir yöndür
+
+
+
+           3. transfrom.TransformVector (YÖN + ÖLÇEK İÇİN)
+               -> Yerel bir vektörü, hem Rotation hem de Sacel (ölçek) değerini hesaba katarak Dünya koordinatına çevirir
+               -> Position (konum) hesaba katılmaz
+               -> "Objem 2 kat büyütülmüşse ve 1 birimlik kuvvet uyguluyorsa, bu dünya üzerinde kaç birimlik kuuvete denk gelir?
+
+               Kullanım:
+                       Vector3 dunyaVectoru = transform.TransformVector(Vector3.forward);
+
+               Örnek:
+                   Eğer objenin Scale değeri (5,5,5) ise, bu vektörün uzunluğu dünyada 5 birim olur.
+
+
+
+
+           [DÜNYA -> YEREL]
+           1. transform.InverseTransformPoint (POZİSYON İÇİN - TERSİ)
+               -> Dünya kordinatındaki bir noktayı, objenin Position, Rotation ve Sacale değerlerini çıkararak "Yerel" koordinata çevirir
+               -> "Dünyadaki bu nokta (örneğin bir elema), bana göre nerede? Sağımda mı, solumda mı?" sorusuna yanıt verir
+
+               Kullanım:
+                   Vector3 yerelNokta = tranform.InverseTransformPoint(elma.position);
+
+                   /// Eğer sonuç (0,0,5) çıkarsai elma tam önğmde ve 5 birim uzaklıktadır
+
+
+           2. transform.InverseTransformDirection (SADECE YÖN İÇİN - TERSİ
+               -> Dünya üzerindeki bir yönü, onjenin sadece Rotation (dönüş) değerini kullanarak "Yerel" yöne çevirir
+               -> Scale ve Position hesaba katılmaz
+               -> "Dünya'nın 'Kuzey' yönü, şu anda benim baktığım açıya göre hangi yönüme düşüyor?" sorusununa yanıt verir
+
+               Kullanım:
+                       Vector3 yerelYon = transform.InverseTransformDirection(Vector3.forward);
+
+                       // Dünya kuzeyi (Vector3.forward), sen arkana bakıyorsan (0,0,-1) uani senin " arka yönün olarak döner
+
+
+           3. transform.InverseTransformVector (YÖN + ÖLÇEK İÇİN - TERSİ)
+               -> Dünya üzerindeki bir vekötrü, objenin Rotation ve Scale değerlerini kullanarak "Yerel" vektöre çevirir.
+               -> "Dünya üzerinde 10 birimlik rüzgar esiyor, objem 2 kat büyütülmüşse bu rüzgarın yerel ölçeğimde kaça düşer?"
+
+               Kullanım:
+                       Vector3 yerelVector = transform.InverseTransformVector(dunyaRuzgarVektoru);
+
+                       // Objenin büyüttükçe, dünya üzerindeki sabt kuvvetler senin yerel ölçeğinde
+                       daha "küçük" kalacaktır
+
+       */
+
+
+        /*     // transform.hasChanged (PERFORMANS OPTİMİZASYONU)
+            // BU özellik, objenin pozisyonu, rotasyonu veya ölçeği o kareden önce değiştiyse 'true' döner
+            // Sürekli ağır hesaplamalar yapıyorsan, sadece değişim olduğunda çalışması için bunu kullanabilirsin.
+            if (transform.hasChanged)
+            {
+                Debug.Log("Obje hareket etti veya döndü!");
+                transform.hasChanged = false; // kontrol bittikten sonra sıfırlamayı unutma!!!!
+            }
+
+               */
+
+
+    }
+
+    public float speed = 10f;
+    void Update()
+    {
+
+        /*   // transform.Translate()-> Objeyi bir noktadan başka bir noktaya hareket ettirmek için
+          transform.Translate(Time.deltaTime * Vector3.forward * speed); // sürekli ileri gitsin
+          transform.Translate(Time.deltaTime * Vector3.left * speed); // sürekli sol gitsin
+          transform.Translate(Time.deltaTime * -Vector3.left * speed); // sürekli sağ gitsin
+          transform.Translate(Time.deltaTime * Vector3.right * speed); // sürekli sağ gitsin
+          transform.Translate(Time.deltaTime * Vector3.back * speed); // sürekli arkaya gitsin 
+         // _obj1.Translate(speed * Time.deltaTime * Vector3.forward, Space.Self); // Parent'ın ileri yönüne göre sürekli git
+
+         */
+
+
+        /*       // transform.LookAt -> _obj1'in ön yüzünü (Z ekseni), _obj2'nin merkezine kilitle. (Objeye doğru dönüş sağlar) [Takip eden bir güvenlik kamerası gibi]
+              // Obje hedefe bakar ve her zaman (Vector3.up)"dik" durur.
+              _obj1.LookAt(_obj2.transform.position, Vector3.up);
+         */
+
+
+        // transform.RotateAround (BİR NOKTA ETRAFINDA DÖNME)
+        // Objeyi dünyadaki herhangi bir nokta etrafında dönüdürü (Güneş etradındaki Dünya gibi)
+        // Kullanım: transform.RotateAround(Nokta, Eksen, Hız);
+        transform.RotateAround(_obj1.position, Vector3.up, speed * Time.deltaTime);
+
+
+
+
+    }
+}
