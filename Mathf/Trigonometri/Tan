@@ -1,0 +1,206 @@
+using System;
+using UnityEngine;
+
+/*
+===========================================================
+TRIG_TAN.cs
+===========================================================
+   Tan, hareket üretmek için değil, matematiksel veya fiziksel hesaplamalarda eğim / slope / açı oranlarını bulmak için kullanılır.
+
+    Tan = eğim (slope) üretir
+        - hızlı yükselen dalga
+        - yön / açı hesapları
+
+    Unity'de çoğu zaman:
+                    - eğim hesaplama
+                    - slope tabanlı hareket
+                    - ray / aim yönü
+                    - açı tabanlı hareket
+
+---------------------------------------------------------------
+
+
+    1) MATEMATİK
+    ---------------
+        Tan(θ) = Karşı / Komşu
+
+        Birim çemberde:
+                    0°  -> 0
+                    45° -> 1
+                    90° -> ∞ (tan tanımsız)
+
+        ÖNEMLİ:
+                Tan fonksiyonu sınırsızdır.
+                    
+                        Tan aralığı:  -∞ → +∞
+
+        
+        Bu yüzden oyunlarda genelde:
+                        - Clamp edilir
+                        - Scale edilir
+
+---------------------------------------------------------------
+
+    2) UNITY MANTIĞI
+    ------------------
+
+            Unity'de:
+                    -> Mathf.Tan(angle)
+                    -> Ama angle RADIAN olmalıdır
+                                            -> float rad = angle * Mathf.Deg2Rad;
+
+
+---------------------------------------------------------------
+
+    3) 3D OYUNLARDA KULLANIM
+    ---------------------------
+
+        Tan genelde hareket üretmek için değil, AÇI ve EĞİM hesaplamak için kullanılır.
+
+                -> mermi açısı
+                -> slope hesaplama
+                -> projectile trajectory
+                -> kamera eğimi
+                -> aim sistemi
+
+
+---------------------------------------------------------------
+
+    KRİTİK BİLGİ
+    ---------------
+
+        Tan = Sin / Cos
+
+                tan(θ) = sin(θ) / cos(θ)
+
+    
+
+---------------------------------------------------------------
+
+    UNITY'DE EN ÖNEMLİ KULLANIM
+    ------------------------------
+
+        slope (Eğim) hesaplama:
+                    -> slope = rise / run
+
+        yani:
+            -> y değişimi / x değişimi
+
+        Slope (rise/run)
+        
+            Rise Nedir?
+            ----------------
+                Rise = dikey değişim (Y farkı)
+
+                Bir nokta yukarı veya aşağı nekadar değiştiğini gösterir
+                
+                    rise = y2 - y1
+
+                Örnek:
+                        A noktası = (0, 1)
+                        B noktası = (4, 3)
+                        rise = 3 - 1 = 2
+                        
+                        Yani 2 birim yukarı çıkmış
+
+
+            Run Nedir?
+            ---------------
+
+                Run = yatay değişim (X farkı)
+
+                    run = x2 - x1
+
+                Örnek:
+
+                    A noktası = (0 , 1)
+                    B noktası = (4 , 3)
+
+                    run = 4 - 0 = 4
+
+                    Yani 4 birim sağa gitmiş
+
+
+            Slope Hesaplama
+            ----------------
+                slope = rise / run
+                
+                    örnek:
+                            Vector3 diff = _target.position - transform.position;
+
+                             
+                             rise = diff.y;
+                             run = diff.x;
+
+                             float slope = rise / run;
+
+                
+                | Sistem      | Kullanım         |
+                | ----------- | ---------------- |
+                | Araç yokuşu | zemin eğimi      |
+                | Projectile  | atış açısı       |
+                | Kamera      | yukarı bakış     |
+                | AI aim      | hedef eğimi      |
+                | Tank topu   | hedef yüksekliği |
+
+
+*/
+public class Trig_Tan : MonoBehaviour
+{
+
+
+    [Header("Slope Hesabı")]
+    public float rampAngle = 30f; // yokuş açısı,  derece cinsinden
+
+
+    void Start()
+    {
+
+
+        float slope = SlopeCalculator(rampAngle);
+
+        Debug.Log("Yokuş açısı: " + rampAngle + "°");
+        Debug.Log("Slope (rise / run) = " + slope);
+
+        // Örnek: 5 birim yatay mesafe için değişim
+        float run = 5f;
+        float rise = slope * run;
+        Debug.Log("Yatay mesafe = " + run + " -> Dikey değişim = " + rise);
+    }
+    void Update()
+    {
+
+
+
+    }
+
+    #region Slope Calculator (Eğim Hesaplama)
+    /*
+  Tan, hareket üretmek için değil, matematiksel veya fiziksel hesaplamalarda eğim / slope / açı oranlarını bulmak için kullanılır.
+        Matemetik:
+            / Tan(θ) = rise / run
+    */
+
+    /// <summary>
+    /// Yokuş veya rampanın eğimini hesaplar.
+    /// </summary>
+    /// <param name="angleDegrees">Yokuş açısı (derece cinsinden)</param>
+    /// <returns>Rise / Run oranı</returns>
+    private float SlopeCalculator(float angleDegrees)
+    {
+        // Dereceyi -> radyana çevir
+        float angleRad = angleDegrees * Mathf.Deg2Rad;
+
+        // Tan(θ) = rise / run
+        float slope = Mathf.Tan(angleRad);
+
+        return slope;
+
+
+
+    }
+    #endregion
+
+
+
+}
