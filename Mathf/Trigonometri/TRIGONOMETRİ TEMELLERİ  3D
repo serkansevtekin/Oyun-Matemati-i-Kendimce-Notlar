@@ -1,0 +1,667 @@
+
+using UnityEngine;
+
+/*
+/*
+ * TRIGONOMETRİ TEMELLERİ (Matematiksel Sözlük)
+ * -------------------------------------------
+ * * 1. SİNÜS (Sin): 
+ * Dik bir üçgende, açının karşısındaki kenarın hipotenüse oranıdır.
+ * Birim çemberde Y eksenindeki değeri temsil eder.
+ * (Oyunlarda: Genellikle dikey hareketler, dalgalanmalar ve X koordinatı için kullanılır)
+ *
+ * 2. KOSİNÜS (Cos): 
+ * Dik bir üçgende, açının komşusundaki kenarın hipotenüse oranıdır.
+ * Birim çemberde X eksenindeki değeri temsil eder.
+ * (Oyunlarda: Genellikle ileri-geri hareketler ve Z koordinatı için kullanılır)
+ *
+ * 3. TANJANT (Tan):
+ * Açının karşısındaki kenarın, komşusundaki kenara oranıdır. (Karşı / Komşu)
+ * Oyunlarda bir çizginin veya yüzeyin "eğimini" (slope) verir.
+ *
+ * 4. ARK-TANJANT (Atan):
+ * Tanjantın tersidir. Bir eğim oranından, o eğime karşılık gelen açıyı verir.
+ * Ancak sadece orana baktığı için kadrant (yön) bilgisini kaybeder.
+ *
+ * 5. ATAN2(y, x):
+ * Atan fonksiyonunun "yön bilgisi koruyan" geliştirilmiş halidir.
+ * İki kenarı (y ve x) ayrı ayrı alır, böylece 360 derecenin hangi tarafında
+ * olduğumuzu bilir ve en doğru açıyı verir. Oyun geliştirmede olmazsa olmazdır.
+ *
+ * 
+ * 
+ 
+
+
+1) Birim Çember Mantığı
+2) Sin / Cos
+3) Daire ve orbit hareketi
+4) Açıdan yön üretme
+5) Atan2 ile yön hesaplama
+6) İki vektör arası açı
+7) Slope ve yükseklik hesapları
+8) Oyun içi gerçek kullanım örnekleri
+*/
+
+
+
+public class Trigonometry3D_Core : MonoBehaviour
+{
+
+
+
+    // ============================================================
+    #region 1 UNIT CIRCLE (BİRİM ÇEMBER TEMELİ)
+    // ============================================================
+
+    /*
+         Trigonometri'nin temeli Birim Çemberdir.
+
+        Radius = 1
+
+        Matematikte:
+
+            cos(angle) = X
+            sin(angle) = Y
+
+
+                Y
+                |
+                |
+        --------0-------- X
+                |
+                |
+
+
+        Unity 3D'de karakterler genelde XZ düzleminde hareket eder.
+
+        Bu yüzden genelde şu sistem kullanılır:
+
+            X = sin(angle)
+            Z = cos(angle)
+
+        Sebep:
+
+            Forward = Z
+            Right   = X
+    */
+    #endregion
+
+
+
+    // ============================================================
+    #region 2 SIN COS TEMELİ
+    // ============================================================
+    /*
+        Trigonometrik fonksiyonları yönlendirme mantığı:
+
+            1. 2D Düzlem (Ekran Kordinatları - UI/2D Oyunlar):
+                    
+                    - Sin(angle) -> Y eksenini (Dikey) kontrol eder
+                    - Cos(angle) -> X eksenini (Yatay) kontrol eder
+                    - Not: Gelende 0 derece X eksenindedir
+            
+            
+            2. 3D Uzat (Yer Düzlemi - Y ekseni yukarıda):
+
+                    - 3D oyunlarda karakterlerin yerde hareket ettiği düzlem XZ düzlemidir
+                    - Sin(angle) -> X eksninin (Sağ/Sol) etkiler
+                    - Cos(angle) -> Z eksenini (İleri/Geri) etkiler
+                    - Not: Unity'de "Forward" vektörü Z'dir, bu yüzden Cos genellikle Z ile eşleşir.
+
+            
+           
+        
+        Trigonometrik fonksiyonlarda Radyan kullanılır
+    */
+
+    void SinCosTemel()
+    {
+        float angle = 45f * Mathf.Deg2Rad;
+
+        float sinValue = Mathf.Sin(angle);
+        float cosValue = Mathf.Cos(angle);
+        Debug.Log("Sin: " + sinValue);
+        Debug.Log("Cos: " + cosValue);
+
+    }
+
+    #endregion
+
+
+    // ============================================================
+    #region 3 DAİRESEL HAREKET (CIRCULAR MOTION)
+    // ============================================================
+    /*
+        En kalsik kullanım
+        
+           z = cos(angle) * radius;
+            x = sin(angle) * radius;
+            
+    */
+
+    [Header("Dairesel Hareket")]
+    public float radius = 5f;
+    public float speed = 1f;
+    public Transform centerPoint; // Döneceği merkez obje (Boş bir GameObject olabilir)
+    void CircularMovement()
+    {
+        float angle = Time.time * speed;
+
+        float z = Mathf.Cos(angle) * radius;
+        float x = Mathf.Sin(angle) * radius;
+
+
+        transform.position = centerPoint.position + new Vector3(x, 0, z);
+    }
+    #endregion
+
+
+
+    // ============================================================
+    #region 4 AÇIDAN YÖN VEKTÖRÜ ÜRETME 
+    // ============================================================
+    /*
+        Bir açıyı (degree/radyan) oyun içindeki bir yöne (Vector3) çevirme
+
+        Kullanım Alanları:
+                - Mermi ateşleme yönü
+                - Düşmanların bakış açısı
+                - 360 derecelik dairesel dizilimler
+
+        Matematik
+        - X = Mathf.Sin(angle)
+        - Z = Mathf.Cos(angle)
+
+
+        Not: Birim çember üzerinde çalıştığımız için oluşan 'dir' vektörü zaten  uzunluğu 1 olan bir "Birim Vektör" dür (Normalized). Fazladan .normalized çağrımana gerek yoktur, ancak bir yarıçap (radius) ile çarparsan, yönü korumak için tekrar normalize etmen gerekebilir
+    */
+
+    Vector3 DirectionFromAngle(float angleDegrees)
+    {
+        // Önce dereceyi radyana çevriyoruz
+        float angle = angleDegrees * Mathf.Deg2Rad;
+
+        // Yönü hesaplyoruz (Bu vektör zaten normalize haldedir)
+        Vector3 dir = new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle));
+
+        Debug.Log("Üretilen Yön: " + dir);
+
+        return dir;
+        // Örnek: Eğer bunu 5 birimlik bir hıza çevirmek istersen:
+        // Vector3 velocity = dir * 5f;
+    }
+
+    #endregion
+
+
+    // ============================================================
+    #region 5 ATAN2 (EN ÖNEMLİ TRIG FONKSİYONU)
+    // ============================================================
+
+    /*
+        Bir vektörün açısnı bulur
+
+        Atan2(y, x)
+
+        Unity 3D'de genelde:
+                            Atan2(x, z); kullanılır
+        
+    */
+
+    public Transform _Target;
+    private void LookAtTarget()
+    {
+        if (_Target == null) return;
+
+        // Fark vektörü
+        Vector3 diffVector = _Target.position - transform.position;
+
+        if (diffVector.sqrMagnitude < 0.001f) return;
+
+        // 1. Önce sadece yönü al (Uzaklığı temizle)
+        Vector3 directionVektor = diffVector.normalized;
+
+        // 2. Artık elinde sadece saf bir yön vektörü var
+        float angle = Mathf.Atan2(directionVektor.x, directionVektor.z) * Mathf.Rad2Deg;
+
+        transform.rotation = Quaternion.Euler(0, angle, 0);
+
+    }
+
+    #endregion
+
+
+
+    // ============================================================
+    #region 6 VECTORLER ARASI AÇI
+    // ============================================================
+    /*
+     PERFORMANS NOTU:
+
+         Açı hesaplamak (Acos) yerine Dot Product kullanıyoruz.
+
+         Dot sonucu:
+                      1 -> Tam önde
+                      0 -> Dik (90 derece açıda)
+                     -1 -> Tam arkada
+    */
+    private float viewAngle = 45f;
+    private float cosViewAngle;
+    /*   void Start()
+      {
+          // Trigonometrik hesaplamayı sadece 1 kez, oyun başında yapıyoruz
+          cosViewAngle = Mathf.Cos(viewAngle * Mathf.Deg2Rad);
+      } */
+    private bool IsTargetInView()
+    {
+
+
+        Vector3 diff = _Target.position - transform.position;
+
+        // Kare alma işlemi, karekök almaktan (magnitude) her zaman daha hızlıdır
+        if (diff.sqrMagnitude < 0.001f) return false;
+        Vector3 directionToTarget = diff.normalized;
+
+        float dotProduct = Vector3.Dot(transform.forward, directionToTarget);
+
+        return dotProduct > cosViewAngle;
+    }
+
+    #endregion
+
+
+
+    // ============================================================
+    #region 7 EĞİM (SLOPE) HESAPLAMA
+    // ============================================================
+
+    /*
+        Tan fonksiyonu eğim hesaplamak için kullanılır
+
+        tan(angle) = karşu / komşu
+
+    */
+
+    void CalculateSlope()
+    {
+        float height = 5f;
+        float distance = 10f;
+
+        float slopeAngle = Mathf.Atan(height / distance) * Mathf.Rad2Deg;
+
+        Debug.Log("Eğim Açısı: " + slopeAngle);
+    }
+
+
+
+    #endregion
+
+
+    // ============================================================
+    #region 8 OYUNLARDA KULLANILAN 10 KRİTİK TRIGONOMETRI FORMÜLÜ
+    // ============================================================
+
+    /* 
+        Bu bölümde Unity 3D oyunlarında sık kullanılan trigonometrik hesaplamalar açıklamalı şekilde gösterilmiştir.
+
+        Temel Fonksiyonlar:
+                            -> Mathf.Sin()
+                            -> Mathf.Cos()
+                            -> Mathf.Tan()
+                            -> Mathf.Atan()
+                            -> Mathf.Atan2()
+        
+        Dönüşümler:
+                - Derece ==> Radian -> Mathf.Deg2Rad
+                - Radian ==> Derece -> Mathf.Rad2Deg
+
+    
+    
+---------------------------------------------------------------------
+1) DAİRESEL HAREKET (Circular Movement)
+---------------------------------------------------------------------
+
+                Bir nesneyi bir merkez etrafında döndürmek
+                
+                *!!!*   ÇOOOOOOKKKK ÖNEMLİ    *!!!*
+                                
+                            Matemetiksel kordinat sistemi kullanılır.
+                            Referans yönü +X ekseni (0° sağ yön)  
+                            Bu nedenle formüller farklı görünür.
+                           
+                             Formül:
+                                x = cos(angle) * radius
+                                z = sin(angle) * radius
+
+                Örnek Kullanım:
+
+                        float angle = Time.time * speed;
+                        
+                        float x = Mathf.Cos(angle) * radius;
+                        float z = Mathf.Sin(angle) * radius;
+
+                        transform.position = new Vector3(x,0,z);
+
+
+                Bağzı Kullanım Alanları:
+                                    -> Orbit kamra
+                                    -> Gezegen sistemleri
+                                    -> radar sweep
+
+
+---------------------------------------------------------------------
+2) AÇIDAN YÖN VEKTÖRÜ ÜRETME
+---------------------------------------------------------------------
+            Bir açıdan yön üretmek
+
+                *!!!*   ÇOOOOOOKKKK ÖNEMLİ    *!!!*
+                   Nesnenin ileri yönü +Z(forward) olduğu için,
+                   Referans yönü +Z ekseni (0° forward yön)
+                   Bu nedenle formüller farklı görünür.
+                           
+
+                    dir.x = sin(a)
+                    dir.z = cos(a)
+
+            Örnek Kullanım:
+                        Vector3 direction = new Vector3(Mathf.Sin(angle),0,Mathf.Cos(angle));
+        
+                    ** Bu vektör bir yönü temsil eder. **
+
+
+            Bağzı Kullanım Alanları:
+                                -> AI hareket yönü
+                                -> Mermi yönü
+                                -> Karakter yönü
+                
+
+---------------------------------------------------------------------
+3) HEDEFE BAKMA AÇISI (Atan2)
+---------------------------------------------------------------------
+
+        Bir hedefe dönmek için kullanılan en enemli trig fonksiyonu.
+
+        Örnek:
+            Vector3 diff = target.postion - transform.position;
+
+            float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Red2Deg;
+
+            transform.rotation = Quaternion.Euler(0, angle, 0);
+
+
+        Kullanım Yerleri:
+                - turret sistemi
+                - düşman hedef takibi
+                - mouse aim
+                
+
+        
+
+
+
+---------------------------------------------------------------------
+4) PITCH HESAPLAMA (YUKARI AŞAĞI AÇI)
+---------------------------------------------------------------------
+
+            Yükseklik farkından açı hesaplamakç
+
+            Örnek Kullanım:
+
+                    floath height = target.position.y - transform.position.y;
+                    float distnace = Vector3.Distance(targetPosXZi transformPosXZ);
+
+                    float pitch = Mathf.Atan2(height / distance ) * Mathf.Rad2Deg;
+
+            
+            Bağzı Kullanıldığı Yerler:
+                    - top mermisi
+                    - uçak hedefleme
+                    - sniper aim
+               
+
+        
+
+---------------------------------------------------------------------
+5) RADAR SWEEP
+---------------------------------------------------------------------
+                Radar çizgisinin dönmesi.
+
+                Örnek Kullanım:
+                         angle += speed * deltaTime
+
+                         Vector3 dir = new Vector3(Mathf.Sin(angle), 0 , Mathf.Cos(angle))
+
+
+
+
+
+---------------------------------------------------------------------
+6) GÖRÜŞ KONİSİ (FIELD OF VIEW)
+---------------------------------------------------------------------
+            Bir düşmanın oyuncuyu görüp görmediğini kontrol etme
+
+            A) Okunabilir Yöntem (Basit Hesaplamalar İçin):
+                
+                    float viewAngle = 30f;
+
+                    Vector3 diff = target.position - transform.position;
+
+                    float angle = Vector3.Angle(transform.forwad , diff)
+
+                    if(angle < viewAngle)
+                    {
+                        Debug.Log("Hedef görüş alanında");
+                    }
+
+
+
+
+        !!!! B) Profesyonel & Performanslı Yöntem (Dot Product): 
+
+          Bu yöntem Acos hesaplamasından kaçınır ve sadece basit çarpma/karşılaştırma yapar.
+
+            Kullanımı:
+
+                    public Transform target;
+
+                    [Header("FOV Ayarı)]
+                    public float totalViewAngle = 60f;
+                    private float cosThreshold;
+
+                    void Start()
+                    {
+                        // Eşik değerini birkez hesapa: Cos(30 derece ) gibi
+                        cosThreshold = Mathf.Cos(totalViewAngle * 0.5f * Mathf.Deg2Rad);
+                    }
+
+                    void Update()
+                    {
+                        if(target == null) return;
+
+                        Vector3 differentVector = target.position - transform.position;
+                        
+                        if(differentVector.sqrMagnitude < 0.001f) return;
+
+                        Vector3 directionToTarget = differentVector.normalized;
+                        
+                        // Dot Product: 1 (tam ön) ile -1 (tam arka) arası değer döner.
+                        float dot = Vector3.Dot(transform.forward, directionToTarget);
+
+                        // Eğer dot değeri, sınır kosinüs değerinden büyükse içindedir.
+                        if(dot > cosThreshold)
+                        {
+                            Debug.Log("Hedef görüş alanında (Hızlı hesaplama)");
+                        }
+                    }
+                
+
+
+---------------------------------------------------------------------
+7) ORBIT KAMERA
+---------------------------------------------------------------------
+                Bir hedefin etrafında dönen kamera
+
+                Örnek Kullanım:
+
+                    float angle = Time.time * orbitSpeed;
+
+                    float x = Mathf.Cos(angle) * orbitRadius;
+                    float z = Mathf.Sin(angle) * orbitRadiuse;
+
+                    camera.position = target.position + new Vector3(x, height, z);
+
+                    camera.LookAt(target);
+                
+
+
+
+---------------------------------------------------------------------
+8) DALGA HAREKETİ (Wave Motion)
+---------------------------------------------------------------------
+            
+            Sin fonksiyonu kullanılarak yukarı aşağı hereket oluşturulur.
+            
+            Örnek Kullanım:
+
+                    float y = Mathf.Sin(Time.time * speed) * amplitude;
+
+                    transform.position = new Vector3(transform.position.x, y , transform.position.z);
+
+            
+            Bağzı Kullanım Alanları:
+                                -> Platform animasyonları
+                                -> Su dalgası
+                                -> Kamera sallanması
+                
+
+
+
+
+---------------------------------------------------------------------
+9) SPİRAL HAREKET
+---------------------------------------------------------------------
+        Daire + yarıçap artışı.
+
+            radius += growSpeed * Time.deltaTime;
+
+            float x = Mathf.Cos(angle) * radius;
+            float z = Mathf.Sin(angle) * radius;
+
+
+
+---------------------------------------------------------------------
+10) EĞİM (SLOPE) HESAPLAMA
+---------------------------------------------------------------------
+
+            Bir yüzeyin eğimini bulmak.
+
+            float slope = Mathf.Atan2(height / distance) * Mathf.Rad2Deg;
+
+            Kullanım:
+                karakter yürüyüş sistemi
+                araç fizik sistemi
+
+
+
+
+---------------------------------------------------------------------
+11) HELİS HAREKETİ
+---------------------------------------------------------------------
+    
+        Yukarı doğru spiral hereket.
+
+            float angle = Time.time * speed;
+            
+            float x = Mathf.Cos(angle) * radius;
+            float z = Mathf.Sin(angle) * radius;
+
+            float y = Time.time * vertical speed;
+
+            transform.position = new vector3(x,y,z);
+
+
+---------------------------------------------------------------------
+12) OSCILLATION (SALINIM)
+---------------------------------------------------------------------
+        Bir nesnenin sağa sol salınması
+        Karakterinin "Nefes alması" veya bir objenin havada yavaşça süzülmesi için kullanılır
+
+            float x = Mathf.Sin(Time.time * speed) * distance;
+
+            transform.position = new Vector3(x,0,0);
+
+
+---------------------------------------------------------------------
+13) HEDEF MESAFEYE GÖRE AÇI
+---------------------------------------------------------------------
+
+    Bir vektörün açısını hesaplamaj
+
+        float angle = Mathf.Atan2(dir.x,dir.z) * Mathf.Rad2Deg;
+
+
+
+
+---------------------------------------------------------------------
+14) DIRECTION NORMALIZATION
+---------------------------------------------------------------------
+
+Yön vektörünü normalize etmek.
+
+Vector3 dir = (target.position - transform.position).normalized;
+
+
+
+---------------------------------------------------------------------
+15) DERECE VE RADYAN DÖNÜŞÜMÜ
+---------------------------------------------------------------------
+
+Trig fonksiyonları radyan kullanır.
+
+float rad = angle * Mathf.Deg2Rad;
+float deg = rad * Mathf.Rad2Deg;
+
+
+
+=====================================================================
+ÖZET
+=====================================================================
+
+    3D oyun geliştirmede en çok kullanılan trig fonksiyonları:
+
+        -> Sin
+        -> Cos
+        -> Atan2
+
+
+    Destekleyici fonksiyonlar:
+
+        -> Tan
+        -> Atan
+        -> Deg2Rad
+        -> Rad2Deg
+
+    
+    
+    Bu matematik özellikle şu sistemlerde kullanılır:
+
+        -> AI yön hesaplama
+        -> Turret sistemleri
+        -> Orbit kamera
+        -> Radar
+        -> Wave motion
+        -> Platform animasyonu
+        -> Görüş konisi
+
+=====================================================================
+
+    */
+    #endregion
+
+
+
+
+
+
+}
