@@ -1,0 +1,72 @@
+
+/*
+    .magnitude
+    -----------------------------------------
+        Amaç: Bir vektörün büyüklüğünü (length) ölçemek.
+              Oyun matematiğinde hız, mesafe, kuvvet gibi değerleri hesaplama için temel bir işlemdir.
+
+        Dikkat:
+            !!-> Her çağrıldığında karekök hesaplar, performans kritik konularda alternatifleri düşün ( karşılaştırma için -> .sqrMagnitude)
+
+        Önemli:
+              magnitude = sqrt(x² + y² + z²)
+              sqrMagnitude = x² + y² + z²
+        
+        Konular:
+                - .magnitude kullanımı
+                - vektörün uzunluğunu hesaplama
+                - normalized ile yön ve büyüklüğü ayırma
+                - fark vektörleriyle mesafe kontrolü
+
+                
+*/
+public class Magnitude_Vector : MonoBehaviour
+{
+
+    // Örnek vektörler
+    public Vector3 velocity = new Vector3(3, 4, 0);
+    public Vector3 pointA = new Vector3(1, 2, 3);
+    public Vector3 pointB = new Vector3(4, 6, 3);
+
+    void Start()
+    {
+
+
+        // 1. Vektörün magnitude değeri
+        float speed = velocity.magnitude;
+        Debug.Log("Velocity vektörünün büyüklüğü (magnitude): " + speed);
+
+
+
+
+        // 1a. Vektörün sqrMagnitude değeri (performans dostu)[mesafe karşılaştırmaları için]
+        float speedSqr = velocity.sqrMagnitude;
+        Debug.Log("Velocity vektörünün karesi (sqr.Magnitude): " + speedSqr);
+
+
+
+        // 2. İki nokta arasındaki fark vektörü ve büyüklüğü
+        Vector3 diff = pointB - pointA;
+        float distance = diff.magnitude;
+        float distanceSqr = diff.sqrMagnitude;
+
+        Debug.Log("PointA ve PointB arasındaki mesafe (magnitude): " + distance);
+        Debug.Log("PointA ve PointB arasındaki mesafe karesi (sqrMagnitude): " + distanceSqr);
+
+
+
+        // 3. Alternatif: Vector3.Distance kullanımı
+        float distanceDirect = Vector3.Distance(pointA,pointB);
+        Debug.Log("Vector3.Distance ile mesafe: "+ distanceDirect);
+
+
+
+        // 4. Büyüklüğü normalize ile yön vektörüne dönüştürme
+        Vector3 direction = diff.normalized;
+        Debug.Log("Yön vektörü (normalized): "+ direction);
+
+
+
+    }
+}
+
