@@ -1,0 +1,114 @@
+
+/*
+
+====================================================================
+SmoothDamp
+====================================================================
+
+        SMOOTHDAMP NEDİR?
+        ---------------------
+            Hedefe doğru YUMŞAK ve kontrollü şekilde yaklaşır
+            Spring-damper (yay + sönümleyici) sistemi gibi çalışır.
+
+            Overshoot yapmaz.
+            Sabit hız değildir
+            Sabit süre değildir
+            Fiziksel yumuşaklık üretir.
+
+        --------------------------------------------------------------------
+        PARAMETRELER
+        --------------------------------------------------------------------
+
+            Vector3.SmoothDamp(current, target, ref currentVelocity), smoothTime, maxSpeed, deltaTime
+
+            currentVelocity -> MUTLAKA ref olamlı. Sistem iç hız bilgisini burada saklar
+
+            smoothTime -> Hedefe nekadar sürede yaklaşacağını belirler. (Tam süre değildir, yumşaklık katsasyısıdır.)
+
+            maxSpeed -> Maksimum hız limiti.
+
+
+        --------------------------------------------------------------------
+        MANTIK
+        --------------------------------------------------------------------
+
+            İçeride:
+                - Exponential decay
+                - Kritik sönümleme (critical damping)
+                - Zaman bazlı difransiyel denklem çözümü
+
+            Basit düşün:
+                Hedefe lastik bağlı gibi yaklaşırsın.
+                Hız artar, sonra yavaşlar ve tam durur.
+
+        --------------------------------------------------------------------
+        OYUNLARDA KULLANIM
+        --------------------------------------------------------------------
+
+                -> Kamera takibi (EN yayfın kullanım)
+                -> UI yumşak geçiş
+                -> Target tracking
+                -> Yumşak karakter hizalama
+                -> Spring efekti
+
+        --------------------------------------------------------------------
+        LERP vs MOVETOWARDS vs SMOOTHDAMP
+        --------------------------------------------------------------------
+
+            Lerp        -> oran bazlı
+            MoveTowards -> sabit hız
+            smoothDamp  -> fiziksel yumşak takip
+
+        
+*/
+public class SmoothDampVector : MonoBehaviour
+{
+
+
+    public Transform _object; // transform.position (olabilir)
+    public Transform _target;
+
+    public float smoothTime = 0.5f;
+    public float maxSpeed = 50f;
+
+    private Vector3 currentVelocity; // Kritik: state tutmalı
+    private const float threshold = 0.01f;
+
+    void Update()
+    {
+        if (_object == null || _target == null) return;
+
+        Vector3 current = _object.position;
+        Vector3 targetPos = _target.position;
+
+        // SmootDamp kullanımı
+        Vector3 result = Vector3.SmoothDamp(current, targetPos, ref currentVelocity, smoothTime, maxSpeed);
+
+        _object.position = result;
+
+        Debug.Log("Position: " + result);
+        Debug.Log("Velocity (internal): " + currentVelocity);
+
+
+        // 2) Hedefe ulaştımı kontrolü
+        // sqrMagnitude kullanarak hem mesafe hem hız kontrolü yapıyoruz
+        float sqrDistance = (targetPos - result).sqrMagnitude;
+        float sqrThreshold = threshold * threshold;
+        
+        // Hem mesafe eşiğin altındaysa hem de hız iyice yavaşladıysa "vardık" diyoruz
+        if (sqrDistance < sqrThreshold && currentVelocity.sqrMagnitude < sqrThreshold)
+        {
+            // Gereksiz log kalabalığını önlemek için bir flag(bool) ekleye bilriz
+            Debug.Log("Hedefe tam olarak yerleşt");
+
+            // Opsiyonel: Tİtremeyi önlemek için pozisyonu tam hedefe eşitleme
+            _object.position = targetPos;
+            currentVelocity = Vector3.zero;
+        }
+
+        // 3) Görselleştirme
+        Debug.DrawLine(current, targetPos, Color.gray);
+    }
+
+
+}
