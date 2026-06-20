@@ -1,0 +1,211 @@
+/*
+
+====================================================================
+Slerp
+====================================================================
+
+    SLERP NEDİR?
+    --------------------------
+        Spherical Linear Interpolation
+
+        İki vekötr arasında doğrusal değil, kürsel yüzey üzerinde enterpolasyon yapar
+
+        Lerp -> düz çizgi
+        Slerp -> yay (arc)
+
+    --------------------------------------------------------------------
+    MATEMATİKSEL MANTIK
+    --------------------------------------------------------------------
+
+        Slerp, iki normalize edilmiş verktör arasında sabit açısal hızla geçiş yapar
+
+        Temel fikir:
+                angle = acos(Dot(a,b))
+                result = (sin((1 - t) * angle) / sin(angle)) * a + (sin(t * angle) / sin(angle)) * b
+
+
+        Bu nedenle:
+                - Dot kullanır
+                - Acos kullanır
+                - Sin kullanır
+
+        Yani Lerp'ten daha pahalıdır
+    
+    --------------------------------------------------------------------
+    NE ZAMAN KULLANILIR?
+    --------------------------------------------------------------------
+
+        -> Yöne geçişleri
+        -> Kamera bakış yçnü
+        -> Aim sistemi
+        -> Quaternin mantığına benzer kullanım
+        -> Sabit açısal hız gereken durumlar
+
+    --------------------------------------------------------------------
+    ÖNEMLİ
+    --------------------------------------------------------------------
+
+        Slerp doğru çalışması için genelde normalize edilmiş yön vekötrleri kullanılır.
+
+        Vector3.Slerp
+                    -> magnitude'ı de enterpole eder
+
+        Quaternion.Slerp
+                    -> rotasyon için tercih edilir
+                    
+
+    ALTIN NOT:
+            "Slerp, objeye bir 'ağırlık' ve 'dönüş yarıçapı' kazandırır. Bu yüzden fiziksel tabanlı araç simülasyonlarında düz çizgiden (Lerp) kaçınıp yay (Slerp) tercih edilir."
+====================================================================
+    ----------------------------------------------
+    | Özellik    | Lerp       | Slerp          |
+    | ---------- | ---------- | -------------- |
+    | Yol        | Düz çizgi  | Yay (arc)      |
+    | Hız        | Doğrusal   | Sabit açısal   |
+    | Performans | Daha hızlı | Daha yavaş     |
+    | Kullanım   | Pozisyon   | Yön / Rotasyon |
+====================================================================
+*/
+public class SlerpVector : MonoBehaviour
+{
+
+    void Update()
+    {
+        // Pürüzsüz Bakış
+        // SmoothLookRotation();
+
+
+        // Yörünge Hareketi || Güneş sistemi
+        // OrbitalMotion();
+
+        // Akıllı Füze
+        HomingProjectile();
+    }
+
+    /*  // Pürüzsüz Bakış
+
+     public Transform _target;
+     public float rorationSpeed = 5f;
+     void SmoothLookRotation()
+     {
+         if (_target == null) return;
+
+         // Hedefe giden yön vektörü
+         Vector3 targerDir = _target.position - transform.position;
+
+         if (targerDir.sqrMagnitude < 0.001f) return;
+
+         Vector3 directionToTarget = targerDir.normalized;
+
+         Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
+
+         // Mevcut rotasyondan hedef rotasyona SLERP yap
+         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rorationSpeed);
+
+
+     } */
+
+
+    /*  // Yörünge Hareketi || Güneş sistemi
+
+     public Transform sun;
+     public Transform planet;
+     public float orbitSpeed = 20f; // Saniyedeki dönme hızı
+     private Vector3 relativePos;
+     void Start()
+     {
+         if (sun != null && planet != null)
+             relativePos = planet.position - sun.position;  // Güneşe göre başlangıç pozisyonu (yarıçap vektörü)
+     }
+     void OrbitalMotion()
+     {
+         if (sun == null || planet == null) return;
+
+         // 1. Mevcut pozisyon (yönü) al
+         Vector3 currentDirection = planet.position - sun.position;
+
+         // 2. Çok küçük bir adım sonrası için hedef yönü belirle
+         // (Mevcut yönü çok az dönüdürerek yeni bir 'hedef' oluşturuyoruz)
+         Vector3 nextTargetDirection = Quaternion.Euler(0, orbitSpeed * Time.deltaTime, 0) * currentDirection;
+
+
+         // 3. Slerp ile mevcut yönden, hedef yöne yumşakça geç
+         // Burada t=1 verirsek direkt hedef açıya gider, düşük bir değer verirsek yumşatır
+         Vector3 smoothStep = Vector3.Slerp(currentDirection.normalized, nextTargetDirection.normalized, 1f);
+
+
+         // 4. Pozisyonu güncelle (Yarıçapı kormuak için relativePos.magnitude ile çarpıyoruz)
+         planet.position = sun.position + (smoothStep * relativePos.magnitude);
+
+     } */
+
+
+    // Akıllı füze veya Takip Eden Ok
+    public Transform _target;
+    public float speed;
+    public float turnSpeed = 2f; // Slerp hızı (kavis kesinliği)
+    void HomingProjectile()
+    {
+        if (_target == null) return;
+
+        // 1. Hedef yönü bul
+        Vector3 targetDiff = _target.position - transform.position;
+
+        if (targetDiff.sqrMagnitude < 0.001f) return;
+
+        Vector3 targetDirection = targetDiff.normalized;
+
+
+
+
+        ///  Mesafeye göre hızı arttır (Opsiyonel)
+        float distance = Vector3.Distance(transform.position, _target.position);
+        float currentSpeed = speed + (10f / (distance + 1f)); // yaklaştıkça hızlanır
+        // Kritik Dokunui: Yaklaştıkça dönüş hızını da (turnSpeed) arttırıyoruz!
+        float dynamicTurnSpeed = turnSpeed * (5f / (distance + 0.5f));
+
+        if (distance < 0.5) return;
+      
+        // 2. Kendi yönümüzü yavaşça hedef yön 'Slerp' ile bük
+        transform.forward = Vector3.Slerp(transform.forward, targetDirection, Time.deltaTime * dynamicTurnSpeed);
+
+
+        // 3. İleri git
+        transform.position += transform.forward * currentSpeed * Time.deltaTime;
+    }
+
+    /*  // Slerp'in teorik mantığını ve matematiksel doğruluğunu test eden bir laboratuvar çalışmasıdır.
+     public Transform _from;
+     public Transform _to;
+
+     [Range(0f, 1f)]
+     public float t = 0f;
+
+     void Update()
+     {
+         if (_from == null || _to == null) return;
+
+         Vector3 a = _from.forward; // otomatik normalize zaten
+         Vector3 b = _to.forward; // otomatik normalize zaten
+
+         // 1) Unity hazır Slerp
+         Vector3 slerpResult = Vector3.Slerp(a, b, t);
+         Debug.Log("Slerp Result:" + slerpResult);
+
+
+         // 2) Lerp ile farkını görmek için
+         Vector3 lerpResult = Vector3.Lerp(a, b, t).normalized;
+         Debug.Log("Lerp (normalized) Result: " + lerpResult);
+
+
+         // 3) Açı kontrolü
+         float totalAngle = Vector3.Angle(a, b);
+         float currenAngle = totalAngle * t;
+
+
+         // 4) Görselleştirme
+         Debug.DrawRay(Vector3.zero, a, Color.blue);
+         Debug.DrawRay(Vector3.zero, b, Color.red);
+         Debug.DrawRay(Vector3.zero, slerpResult, Color.green);
+     } */
+}
