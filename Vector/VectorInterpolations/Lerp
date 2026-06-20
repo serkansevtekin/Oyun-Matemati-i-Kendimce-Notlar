@@ -1,0 +1,140 @@
+/*
+====================================================================
+Lerp_Vector.cs
+====================================================================
+    
+    LERP NEDİR?
+    --------------
+        Linear interpolation (Doğrusal Enterpolasyon)
+
+        İki nokta arasında t oranında geçiş yapar
+
+        Formül:
+                Lerp(a,b,t) = a + (b - a ) * t
+
+                t:
+                      0 -> a
+                      1 -> b
+                    0.5 -> tam ortası
+
+
+    --------------------------------------------------------------------
+    ÖNEMLİ BİLGİ
+    --------------------------------------------------------------------
+
+        Vector3.Lerp(a, b, t)
+                            -> t değrini 0-1 arasında clamp eder.
+
+        Vector3.LerpUnclamped
+                            -> t'yi clamp etmez (taşabilir.)
+
+
+    --------------------------------------------------------------------
+    OYUNLARDA KULLANIM
+    --------------------------------------------------------------------
+
+        -> Yumşak pozisyon geçişi
+        -> Kamera takip
+        -> UI animasyonları
+        -> Health bar geçişi
+        -> Yavaş hareket efekti
+
+
+    --------------------------------------------------------------------
+    DİKKAT!!!
+    --------------------------------------------------------------------
+
+        Lerp zaman tabanlı DEĞİLDİR.
+
+       **  Yanlış kullanım:   
+                    ->> trasform.position = Vector3.Lerp(
+                                                        transform.position,
+                                                        target,
+                                                        Time.deltaTime
+                                                        );
+                    Bu exponention decay üretir
+                    Sabit sürede gitmez
+        
+       ** Doğru kullanım:
+                    ->>>>> t = elapsedTime / duration
+
+
+    
+    -----------------------------------------------------------------------
+
+    | Özellik    | Lerp       | Slerp          |
+    | ---------- | ---------- | -------------- |
+    | Yol        | Düz çizgi  | Yay (arc)      |
+    | Hız        | Doğrusal   | Sabit açısal   |
+    | Performans | Daha hızlı | Daha yavaş     |
+    | Kullanım   | Pozisyon   | Yön / Rotasyon |
+
+
+*/
+
+public class LerpVector : MonoBehaviour
+{
+
+
+    [Header("Zaman Tabanlı Hareket (Lerp)")]
+    public Transform _end;
+    public float duration = 2f;
+    private Vector3 _start;
+    private float elapsedTime = 0f;
+
+    [Header("Takip Ayarları (Dinamik)")]
+    public float speed = 5f; // MoveTowards için sabit hız
+    public float smoothTime = 0.3f; // SmoothDamp için varış süresi
+
+    private Vector3 currentVelocity = Vector3.zero;
+
+    void Start()
+    {
+        _start = transform.position;
+    }
+
+    void Update()
+    {
+        if (_end == null) return;
+
+        // --- YÖNTEM 1: ZAMAN TABANLI LERP (BENİM YAZDIĞIM) ---
+        // Kullanım: Belirli sürede, sabit hedefe gitmek için (Satranç, UI)
+        HendleLerpMovement();
+
+
+        // --- YÖNTEM 2: SABİT HIZLA KOVALAMA (MoveTowards) ---
+        // Kullanım: Mermiler veya hedefe her zaman aynı hızla giden objeler
+        // transform.position = Vector3.MoveTowards(trasform.position, _end.position, speed * Time.deltaTime);
+
+
+
+        // --- YÖNTEM 3: YUMŞAK TAKİP (SmoothDamp) ---
+        // Kullanım: Kamera takibi veya esnek karakter takibi
+        // transform.position = Vector3.SmoothDamp(transform.position, _end.position, ref currentVelocity, smoothTime);
+
+
+    }
+
+    private void HendleLerpMovement()
+    {
+        if (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+
+            float t = Mathf.Clamp01(elapsedTime / duration);
+
+            // SmoothStep formülü: t * t * (3f - 2f * t)
+            float smoothT = t * t * (3f - 2f * t);
+
+            transform.position = Vector3.Lerp(_start, _end.position, smoothT);
+        }
+    }
+
+
+    // Bu fonksiyonu dışarıdan çağırarak hareketi istediğin zaman resetleyebilirsin
+    public void ResetLerp()
+    {
+        _start = transform.position;
+        elapsedTime = 0f;
+    }
+}
