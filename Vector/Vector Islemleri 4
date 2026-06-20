@@ -1,0 +1,53 @@
+using UnityEngine;
+
+public class VectorIslemleri4 : MonoBehaviour
+{
+    public Transform _Obje1;
+    Vector3 MevcutHiz = Vector3.zero;
+
+    void Start()
+    {
+        Vector3 poz = new(1, 5, 3);
+        Vector3 Poz2 = new(4, 2, 4);
+
+        /*  // Vector3.Min -> Verilen 2 pozisyon arasındaki en KÜÇÜK değerleri alarak yeni bir pozisyon oluşturur
+         Debug.Log(Vector3.Min(poz, Poz2)); //(1,2,3)*/
+
+
+        /*       // Vector3.Max -> Verilen 2 pozisyon arasındaki en BÜYÜK değerleri alarak yeni bir pozisyon oluşturur
+             Debug.Log(Vector3.Max(poz, Poz2)); //(4,5,4)*/
+
+       /*  // Vector3.Scale -> Verilen 2 pozisyonu vektör bazında çarpar
+        Debug.Log(Vector3.Scale(poz, Poz2)); //(4,10,12) */
+
+        
+    }
+    void Update()
+    {
+        /*       // MoveTowards Hedef Konuma Hareket etme ve Hedef konumu sürekli takip etme
+                transform.position = Vector3.MoveTowards(transform.position, _Obje1.position, 5f * Time.deltaTime); */
+
+        /*  // RotateTowards Objeye rotasyonuna göre harekt
+         // Hedef ile kendi pozisyonumuz arasındaki  yönü hesaplıyoruz ve  normalize ediyoruz (sadece yön, uzunluk 1)
+         Vector3 _Yon = (_Obje1.position - transform.position).normalized;
+
+
+
+         // Mevcut forward yönümüzü, hedef yönüne doğru belirlenen maksimum açı (radyan cinsinden) kadar döndürüyoruz
+         // 2f = bu frame'de dönebileceği maksimum açı (radyan)
+         // 0 = büyüklük (magnitude) değişimine izin vermiyoruz
+         Vector3 YeniYon = Vector3.RotateTowards(transform.forward, _Yon, 2f, 0);
+
+         // Hesaplanan yeni yönü rotasyona çevirip objeye uyguluyoruz
+         transform.rotation = Quaternion.LookRotation(YeniYon);
+
+         // Görselleştirme için
+         Debug.DrawRay(transform.position, _Yon, Color.rebeccaPurple, 4f, true); */
+
+        /*  // smoothDamp -> hedefe yaklaşma işlemi yapar ama hedefe yaklaştıkça sönümleme işlemi yapar  (zaten buna sönümleyici denilmekte)
+         transform.position = Vector3.SmoothDamp(transform.position, _Obje1.position, ref MevcutHiz, 3f, 5f, 5f * Time.deltaTime); */
+
+    
+    }
+
+}
