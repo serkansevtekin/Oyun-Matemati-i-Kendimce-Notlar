@@ -1,72 +1,113 @@
+using UnityEngine;
+
+
 
 /*
-    .magnitude
+     .magnitude
     -----------------------------------------
-        Amaç: Bir vektörün büyüklüğünü (length) ölçemek.
-              Oyun matematiğinde hız, mesafe, kuvvet gibi değerleri hesaplama için temel bir işlemdir.
+        Amaç: Bir vektörün büyüklüğü (length) ölçmek
+            -> Oyun matematiğinde hız, mesafe, kuvvet gibi değerleri hesaplamak için temel bir işlemdir
 
-        Dikkat:
-            !!-> Her çağrıldığında karekök hesaplar, performans kritik konularda alternatifleri düşün ( karşılaştırma için -> .sqrMagnitude)
+        Dikkat!!:
+            !! -> Her çağrıldığında karekök hesaplar, performans kritik konularda alternatifleri düşün (karşılaştırma için -> .sqrMagnitude)
 
         Önemli:
-              magnitude = sqrt(x² + y² + z²)
-              sqrMagnitude = x² + y² + z²
+                magnitude = sqrt(x² + y² + z²)
+                sqrMagnitude = x² + y² + z²
         
-        Konular:
+         Konular:
                 - .magnitude kullanımı
                 - vektörün uzunluğunu hesaplama
                 - normalized ile yön ve büyüklüğü ayırma
                 - fark vektörleriyle mesafe kontrolü
-
-                
 */
-public class Magnitude_Vector : MonoBehaviour
+public class Magnitude : MonoBehaviour
 {
 
-    // Örnek vektörler
     public Vector3 velocity = new Vector3(3, 4, 0);
     public Vector3 pointA = new Vector3(1, 2, 3);
     public Vector3 pointB = new Vector3(4, 6, 3);
 
     void Start()
     {
-
-
-        // 1. Vektörün magnitude değeri
+        // 1. Vekötrün magnitude değeri
         float speed = velocity.magnitude;
         Debug.Log("Velocity vektörünün büyüklüğü (magnitude): " + speed);
 
 
-
-
-        // 1a. Vektörün sqrMagnitude değeri (performans dostu)[mesafe karşılaştırmaları için]
-        float speedSqr = velocity.sqrMagnitude;
-        Debug.Log("Velocity vektörünün karesi (sqr.Magnitude): " + speedSqr);
-
+        // 1.a. Vektörün sqrMagnitude değeri (performans dostu)[mesafe karşılaştırmaları için]
+        float speedSqrMagnitude = velocity.sqrMagnitude;
+        Debug.Log("Velocity vektörünün karesi (sqr.Magnitude): " + speedSqrMagnitude);
 
 
         // 2. İki nokta arasındaki fark vektörü ve büyüklüğü
-        Vector3 diff = pointB - pointA;
-        float distance = diff.magnitude;
-        float distanceSqr = diff.sqrMagnitude;
+        Vector3 diffVector = pointB - pointA;
+        float distance = diffVector.magnitude;
+        float distanceSqrMag = diffVector.sqrMagnitude;
 
         Debug.Log("PointA ve PointB arasındaki mesafe (magnitude): " + distance);
-        Debug.Log("PointA ve PointB arasındaki mesafe karesi (sqrMagnitude): " + distanceSqr);
-
+        Debug.Log("PointA ve PointB arasındaki mesafe karesi (sqrMagnitude): " + distanceSqrMag);
 
 
         // 3. Alternatif: Vector3.Distance kullanımı
-        float distanceDirect = Vector3.Distance(pointA,pointB);
-        Debug.Log("Vector3.Distance ile mesafe: "+ distanceDirect);
+        float Ve3Distance = Vector3.Distance(pointA, pointB);
+        Debug.Log("Vector3.Distance ile mesafe: " + Ve3Distance);
+
+
+        // 4. Büyüklüğü normalize ile yön vektörüne dönüştürme [Birim Çember uzunluğu 1'e eşitlenir]
+        Vector3 direction = (pointB - pointA).normalized;
+        Debug.Log("Yön vektörü (normalized): " + direction);
+
+
+        //--------------------------------------------------------------
+        // Karakterin ulaşabileceği maksimum hız sınırı (Başlangıçta 10) [Karakter güçlenirse bu değer arttırılacak]
+        float _maxSpeed = 10f;
+
+        // Örnek: Karakterin hızı ne kadar artarsa artsın, büyüklüğü asla 10 birimi geçmesin.
+        Vector3 limitedVelocity = Vector3.ClampMagnitude(velocity, _maxSpeed);
 
 
 
-        // 4. Büyüklüğü normalize ile yön vektörüne dönüştürme
-        Vector3 direction = diff.normalized;
-        Debug.Log("Yön vektörü (normalized): "+ direction);
+        // Yanlış !!!!!!!!!!!!!!!!!!!!!!
+        /* Dikkat Edilmesi Gereken Nokta
+
+                        Eğer transform.position değerini clamp'lersen, karakterin hızını değil, dünyada gidebileceği alanı (orijin noktasına yani 0,0,0 konumuna olan mesafesini) 10 birimle sınırlamış olursun. 
+                        Karakter dünyada (0,0,0) noktasından 10 birim uzaklaştığı an görünmez bir duvara çarpmış gibi kalır, daha uzağa gidemez.
+        */
+        Vector3 limitedVelocity2 = Vector3.ClampMagnitude(transform.position, _maxSpeed);
+
+
+        // Doğru Kullanım !!!!!!!!!!!!!!!!!
+        // Bizim sınırlamak istediğimiz şey konum değil, hız vektörü(velocity) veya kuvvet vektörü(force) olmalıdır.Doğru yaklaşım şu şekildedir:
+        // Karakterin o anki hız vektörünü alıyoruz (Örn: Rigidbody kullanıyorsak)
+        Rigidbody Rb = GetComponent<Rigidbody>();
+        Vector3 currentVelocity = Rb.linearVelocity;
+
+        // Hız vektörünün büyüklüğünü (magnitude) maksimum 10 olacak şekilde sınırlıyoruz
+        Vector3 limitedVeloctiy3 = Vector3.ClampMagnitude(currentVelocity, _maxSpeed);
+
+        // Sınırlanmış yeni hızı tekrar karaktere atıyoruz
+        Rb.linearVelocity = limitedVeloctiy3;
+
+        //--------------------------------------------------------------
 
 
 
+
+        // Yanlış / Performanssız Yaklaşım:
+        if ((pointB - pointA).magnitude < 5f)
+        {
+            Debug.Log("PointB 5f ten küçük");
+        }
+
+        // Doğru / Performans Dostu Yaklaşım:
+        float targetDistance = 5f;
+
+        // .sqrMagnitude Kare alma olduğundan burada (targetDistance * targetDistance) yaptık
+        if ((pointB - pointA).sqrMagnitude < (targetDistance * targetDistance))
+        {
+            Debug.Log("PointB 5f ten küçük");
+
+        }
     }
 }
-
